@@ -99,7 +99,5 @@ wss.on("connection", (ws) => {
         server.listen(PORT, () => {
             console.log(`🚀 Сервер слушает http://localhost:${PORT}`);
         });
-
-        return;
     });
 });
