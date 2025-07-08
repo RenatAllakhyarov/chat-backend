@@ -1,5 +1,6 @@
 import express, { type Request, type Response } from "express";
 import http from "http";
+import { format } from "path";
 import { WebSocketServer } from "ws";
 
 const app = express();
@@ -22,14 +23,14 @@ const users = new Map();
 type Message = {
     username: string;
     text: string;
-    timestamp: number;
+    timestamp: string;
 };
 const messages: Message[] = [];
 
 wss.on("connection", (ws) => {
     console.log("✅ Новый клиент подключился");
 
-    // ws.once("message", (data) => {
+    // ws.onmessage("message", (data) => {
     //     let parsed;
 
     //     try {
@@ -48,7 +49,6 @@ wss.on("connection", (ws) => {
     //                 message: "Введи имя свое",
     //             })
     //         );
-    //         ws.close();
     //         return;
     //     }
 
@@ -59,6 +59,16 @@ wss.on("connection", (ws) => {
     //     console.log(`${username} зашел в чат`);
 
     //     ws.send(JSON.stringify({ type: "history", messages }));
+
+    // ws.onmessage = (event) => {
+    //     console.log("event", JSON.stringify(event));
+    //     // try {
+    //     //     // const data = JSON.parse(toString(event.data));
+    //     //     console.log("Received:", data);
+    //     // } catch (err) {
+    //     //     console.error("Failed to parse message:", event.data);
+    //     // }
+    // };
 
     ws.on("message", (raw) => {
         let msg;
@@ -76,7 +86,7 @@ wss.on("connection", (ws) => {
             const message = {
                 username,
                 text: msg.text,
-                timestamp: Date.now(),
+                timestamp: Date.now().toLocaleString("ru-RU"),
             };
 
             messages.push(message);
@@ -92,17 +102,12 @@ wss.on("connection", (ws) => {
         }
     });
 
-    //     ws.on("close", () => {
-    //         const username = users.get(ws);
+    ws.on("close", () => {
+        const username = users.get(ws);
 
-    //         users.delete(ws);
+        users.delete(ws);
 
-    //         console.log(`❌ Клиент ${username} отключился`);
-
-    //     });
-
-    ws.on("close", (code, reason) => {
-        console.log("🚪 Выход :", code, reason);
+        console.log(`❌ Клиент ${username} отключился`);
     });
 
     ws.on("error", (err) => {
