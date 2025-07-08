@@ -3,7 +3,16 @@ import http from "http";
 import { WebSocketServer } from "ws";
 
 const app = express();
+
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "http://localhost:5173");
+    res.header("Access-Control-Allow-Methods", "GET, POST");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
+    next();
+});
+
 const server = http.createServer(app);
+
 const wss = new WebSocketServer({ server });
 
 const PORT = 3001;
@@ -36,14 +45,14 @@ wss.on("connection", (ws) => {
             ws.send(
                 JSON.stringify({
                     type: "error",
-                    message: "Введи по-братски имя свое",
+                    message: "Введи имя свое",
                 })
             );
             ws.close();
             return;
         }
 
-        const username = parsed.username;
+        const username = parsed?.username;
 
         users.set(ws, username);
 
@@ -67,6 +76,7 @@ wss.on("connection", (ws) => {
                     text: msg.text,
                     timestamp: Date.now(),
                 };
+
                 messages.push(message);
 
                 for (let client of wss.clients) {
@@ -86,6 +96,7 @@ wss.on("connection", (ws) => {
             users.delete(ws);
 
             console.log(`❌ Клиент ${username} отключился`);
+            
         });
 
         ws.on("error", (err) => {
