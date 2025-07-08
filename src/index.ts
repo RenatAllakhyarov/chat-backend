@@ -1,7 +1,7 @@
 import express, { type Request, type Response } from "express";
 import http from "http";
-import { format } from "path";
 import { WebSocketServer } from "ws";
+import { type Message } from "./types";
 
 const app = express();
 
@@ -20,11 +20,7 @@ const PORT = 3001;
 
 const users = new Map();
 
-type Message = {
-    username: string;
-    text: string;
-    timestamp: string;
-};
+
 const messages: Message[] = [];
 
 wss.on("connection", (ws) => {
