@@ -1,7 +1,7 @@
 import express, { type Request, type Response } from "express";
 import http from "http";
 import { WebSocketServer } from "ws";
-import { type Message } from "./types";
+import { type Message } from "./types/meta";
 
 const app = express();
 
