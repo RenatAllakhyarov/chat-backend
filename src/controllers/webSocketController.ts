@@ -16,7 +16,7 @@ export function clientConnection(ws: WebSocket, wss: WebSocketServer) {
             parsed = JSON.parse(raw.toString());
         } catch {
             sendingMessage(ws, { type: "error", message: "Incorrect JSON" });
-            ws.close();
+
             return;
         }
 
@@ -39,10 +39,15 @@ export function clientConnection(ws: WebSocket, wss: WebSocketServer) {
                 break;
 
             case "msg":
-                if (typeof parsed.text != "string") return;
+                if (typeof parsed.text !== "string") {
+                    return;
+                }
 
                 const username = users.get(ws);
-                if (!username) return;
+
+                if (!username) {
+                    return;
+                }
 
                 const message = {
                     username,
