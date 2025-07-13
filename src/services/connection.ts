@@ -11,9 +11,13 @@ export function clientConnection(ws: WebSocket, wss: WebSocketServer) {
 
     ws.on("message", (raw) => {
         const parsed = parseClientMessage(raw, ws);
-        if (!parsed) return;
+        
+        if (!parsed) {
+            return
+        };
 
         const handler = messageHandlers[parsed.type];
+
         if (handler) {
             handler(ws, wss, parsed);
         } else {
@@ -23,7 +27,9 @@ export function clientConnection(ws: WebSocket, wss: WebSocketServer) {
 
     ws.on("close", () => {
         const username = users.get(ws);
+        
         users.delete(ws);
+        
         console.log(`${username} disconnected`);
     });
 

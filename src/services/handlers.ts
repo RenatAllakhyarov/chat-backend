@@ -12,6 +12,7 @@ export function parseClientMessage(raw: RawData, ws: WebSocket): ClientMessage |
         return JSON.parse(raw.toString()) as ClientMessage;
     } catch {
         sendingMessage(ws, { type: "error", message: "Incorrect JSON" });
+
         return undefined;
     }
 }
@@ -27,10 +28,12 @@ export function handleInit(ws: WebSocket, _wss: WebSocketServer,parsed: ClientMe
             type: "error",
             message: "Write your nickname",
         });
+
         return;
     }
 
     users.set(ws, parsed.username);
+
     console.log(`${parsed.username} is joined to chat`);
 
     sendingMessage(ws, { type: "history", messages });
@@ -45,6 +48,7 @@ export function handleMsg(ws: WebSocket, wss: WebSocketServer, parsed: ClientMes
     if (typeof parsed.text !== "string") return;
 
     const username = users.get(ws);
+    
     if (!username) return;
 
     const message = {
