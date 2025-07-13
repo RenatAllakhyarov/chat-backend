@@ -2,7 +2,7 @@ import express from "express";
 import http from "http";
 import { WebSocketServer } from "ws";
 import { corsMiddleware } from "./middlewares/CORS";
-import { clientConnection } from "./controllers/webSocketController";
+import { clientConnectionController } from "./controllers/webSocketController";
 
 const app = express();
 // app.use(corsMiddleware);
@@ -15,7 +15,7 @@ const server = http.createServer(app);
 
 const wsServer = new WebSocketServer({ server });
 
-wsServer.on("connection", (ws) => clientConnection(ws, wsServer));
+wsServer.on("connection", (ws) => clientConnectionController(ws, wsServer));
 
 const PORT = 3001;
 
