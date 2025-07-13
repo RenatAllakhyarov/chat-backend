@@ -1,4 +1,5 @@
 export interface Message {
+    id: number;
     username: string;
     text: string;
     timestamp: string;
@@ -10,5 +11,5 @@ export type ServerMessages =
     | { type: "msg"; username: string; text: string; timestamp: string };
 
 export type ClientMessage =
-    | { type: "init"; username: string }
+    | { type: "init"; username: string, id: string}
     | { type: "msg"; text: string };

@@ -5,7 +5,7 @@ import { corsMiddleware } from "./middlewares/CORS";
 import { clientConnectionController } from "./controllers/webSocketController";
 
 const app = express();
-// app.use(corsMiddleware);
+app.use(corsMiddleware);
 
 app.get("/test", (_, response) => {
     response.status(200).send("All is good");

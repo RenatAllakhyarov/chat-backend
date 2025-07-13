@@ -31,7 +31,9 @@ export function handleInit(ws: WebSocket, _wss: WebSocketServer,parsed: ClientMe
     }
 
     users.set(ws, parsed.username);
+    
     console.log(`${parsed.username} is joined to chat`);
+    console.log("USERS: ", users);
 
     sendingMessage(ws, { type: "history", messages });
 }
@@ -45,9 +47,12 @@ export function handleMsg(ws: WebSocket, wss: WebSocketServer, parsed: ClientMes
     if (typeof parsed.text !== "string") return;
 
     const username = users.get(ws);
+    console.log("SENDER USERNAME: ", username);
+
     if (!username) return;
 
     const message = {
+        id: Math.random(),
         username,
         text: parsed.text,
         timestamp: new Date().toLocaleString("ru-RU"),
@@ -55,7 +60,11 @@ export function handleMsg(ws: WebSocket, wss: WebSocketServer, parsed: ClientMes
 
     messages.push(message);
 
+    console.log("MESSAGES: ", messages);
+
     console.log(`${username}: ${parsed.text} at [${message.timestamp}]`);
+
+
 
     for (const client of wss.clients) {
         if (client.readyState === WebSocket.OPEN) {

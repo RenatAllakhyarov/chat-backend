@@ -4,12 +4,13 @@ import { WebSocket } from "ws";
 export const messages: Message[] = [];
 export const users = new Map<WebSocket, string>();
 
+
 /* TODO 
 interface IUserChat {
     name: string;
     messages: Message[];
 };
-
+  
 interface IMessageBook {
     [key: string]: IUserChat;
 }
