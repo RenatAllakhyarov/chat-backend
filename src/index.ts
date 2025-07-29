@@ -7,10 +7,6 @@ import { clientConnectionController } from "./controllers/webSocketController";
 const app = express();
 app.use(corsMiddleware);
 
-app.get("/test", (_, response) => {
-    response.status(200).send("All is good");
-});
-
 const server = http.createServer(app);
 
 const wsServer = new WebSocketServer({ server });
@@ -22,3 +18,6 @@ const PORT = 3001;
 server.listen(PORT, () => {
     console.log(`🚀 Сервер слушает http://localhost:${PORT}`);
 });
+    app.get("/test", (_, response) => {
+        response.status(200).send("All is good");
+    });
