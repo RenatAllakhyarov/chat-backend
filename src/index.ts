@@ -3,6 +3,7 @@ import http from "http";
 import { WebSocketServer } from "ws";
 import { corsMiddleware } from "./middlewares/CORS";
 import { clientConnectionController } from "./controllers/webSocketController";
+import { connectMongo } from "./db/mongo";
 
 const app = express();
 app.use(corsMiddleware);
@@ -11,8 +12,9 @@ app.get("/test", (_, response) => {
     response.status(200).send("All is good");
 });
 
-const server = http.createServer(app);
+connectMongo();
 
+const server = http.createServer(app);
 const wsServer = new WebSocketServer({ server });
 
 wsServer.on("connection", (ws) => clientConnectionController(ws, wsServer));

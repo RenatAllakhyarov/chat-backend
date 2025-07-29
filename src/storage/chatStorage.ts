@@ -1,10 +1,9 @@
 import { Message } from "../types/meta";
 import { WebSocket } from "ws";
 
-export const messages: Message[] = [];
+export const chatMessages: Message[] = [];
 
-export const users = new Map<WebSocket, string>();
-
+export const userConnections = new Map<WebSocket, string>();
 
 /* TODO 
 interface IUserChat {
