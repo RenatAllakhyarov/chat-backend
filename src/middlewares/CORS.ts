@@ -1,17 +1,14 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from 'express';
 
-const ALLOWED_ORIGIN = "http://localhost:5173";
+const ALLOWED_ORIGIN = 'http://localhost:5173';
 
 export function corsMiddleware(
-    request: Request,
-    response: Response,
-    next: NextFunction
+  request: Request,
+  response: Response,
+  next: NextFunction
 ) {
-    console.log("Вызван corsMiddleware");
-    console.log("Метод запроса:", request.method);
-    console.log("Путь запроса:", request.path);
-    response.header("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
-    response.header("Access-Control-Allow-Methods", "GET, POST");
-    response.header("Access-Control-Allow-Headers", "Content-Type");
-    next();
+  response.header('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  response.header('Access-Control-Allow-Methods', 'GET, POST');
+  response.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
 }

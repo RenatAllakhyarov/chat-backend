@@ -1,26 +1,30 @@
-import express from "express";
-import http from "http";
-import { WebSocketServer } from "ws";
-import { corsMiddleware } from "./middlewares/CORS";
-import { clientConnectionController } from "./controllers/webSocketController";
-import { connectMongo } from "./db/mongo";
+import http from 'http';
+import dotenv from 'dotenv';
+import express from 'express';
+import { clientConnectionController } from './controllers/webSocketController';
+import { WebSocketServer } from 'ws';
+import { corsMiddleware } from './middlewares/CORS';
+import { connectMongodb } from './db/mongo';
+
+
+dotenv.config();
 
 const app = express();
 app.use(corsMiddleware);
 
-app.get("/test", (_, response) => {
-    response.status(200).send("All is good");
+app.get('/test', (_, response) => {
+  response.status(200).send('All is good');
 });
 
-connectMongo();
+connectMongodb();
 
 const server = http.createServer(app);
-const wsServer = new WebSocketServer({ server });
+const websocketServer = new WebSocketServer({ server });
 
-wsServer.on("connection", (ws) => clientConnectionController(ws, wsServer));
+websocketServer.on('connection', (websocket) => clientConnectionController(websocket, websocketServer));
 
-const PORT = 3001;
+const PORT = process.env.PORT;
 
 server.listen(PORT, () => {
-    console.log(`🚀 Сервер слушает http://localhost:${PORT}`);
+  console.log(`🚀 Сервер слушает http://localhost:${PORT}`);
 });
