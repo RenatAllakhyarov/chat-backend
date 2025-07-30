@@ -6,7 +6,6 @@ import { WebSocketServer } from 'ws';
 import { corsMiddleware } from './middlewares/CORS';
 import { connectMongodb } from './db/mongo';
 
-
 dotenv.config();
 
 const app = express();
@@ -21,7 +20,9 @@ connectMongodb();
 const server = http.createServer(app);
 const websocketServer = new WebSocketServer({ server });
 
-websocketServer.on('connection', (websocket) => clientConnectionController(websocket, websocketServer));
+websocketServer.on('connection', (websocket) =>
+  clientConnectionController(websocket, websocketServer)
+);
 
 const PORT = process.env.PORT;
 

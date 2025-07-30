@@ -2,12 +2,13 @@
 import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { userSocketMap, chatMessages } from '../storage/chatStorage';
 import { ClientMessage, ServerMessages } from '../types/meta';
+import { Isdbconnected } from '../db/mongo';
 import { Message } from '../models/Message';
 import { User } from '../models/User';
 import { text } from 'stream/consumers';
 
 export function sendingMessage(websocket: WebSocket, message: ServerMessages) {
-    websocket.send(JSON.stringify(message));
+  websocket.send(JSON.stringify(message));
 }
 
 export function parseClientMessage(
@@ -28,6 +29,15 @@ export async function handleInit(
   websocketserver: WebSocketServer,
   parsed: ClientMessage
 ) {
+  if (!Isdbconnected) {
+    sendingMessage(websocket, {
+      type: 'error',
+      message: 'Database is unavailable',
+    });
+    websocket.close(1000, 'DB connection failed');
+    return;
+  }
+
   if (parsed.type !== 'init') {
     return;
   }
@@ -61,11 +71,19 @@ export async function handleInit(
   sendingMessage(websocket, { type: 'history', messages: wsMessages });
 }
 
-export async function handleMsg(
+export async function handleMessage(
   websocket: WebSocket,
   websocketserver: WebSocketServer,
   parsed: ClientMessage
 ) {
+  if (!Isdbconnected) {
+    sendingMessage(websocket, {
+      type: 'error',
+      message: 'Database is unavailable',
+    });
+    websocket.close(1000, 'DB connection failed');
+    return;
+  }
   if (parsed.type !== 'msg') {
     return;
   }
@@ -88,11 +106,10 @@ export async function handleMsg(
     text: parsed.text,
     timestamp: new Date(),
   });
-  
+
   try {
     await dbMessage.save();
-  } catch (error) {
-  }
+  } catch (error) {}
 
   for (const client of websocketserver.clients) {
     if (client.readyState === WebSocket.OPEN) {
@@ -106,5 +123,5 @@ export const messageHandlers: Record<
   (ws: WebSocket, wss: WebSocketServer, parsed: ClientMessage) => Promise<void>
 > = {
   init: handleInit,
-  msg: handleMsg,
+  msg: handleMessage,
 };

@@ -1,7 +1,6 @@
 import { WebSocket } from 'ws';
 import { Message } from '../types/meta';
 
-
 export const chatMessages: Message[] = [];
 
 export const userSocketMap = new Map<WebSocket, string>();

@@ -15,6 +15,10 @@ dist-ssr
 #enviromental variables
 .env
 
+#prettier commands
+npm run format
+npm run format:check
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
