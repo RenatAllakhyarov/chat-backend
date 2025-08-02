@@ -4,7 +4,7 @@ import express from 'express';
 import { clientConnectionController } from './controllers/webSocketController';
 import { WebSocketServer } from 'ws';
 import { corsMiddleware } from './middlewares/CORS';
-import { connectMongodb } from './db/mongo';
+import { DataBaseConnection } from './services/DataBaseService/dataBaseConnection';
 
 dotenv.config();
 
@@ -15,7 +15,8 @@ app.get('/test', (_, response) => {
   response.status(200).send('All is good');
 });
 
-connectMongodb();
+export const dataBaseConnection = new DataBaseConnection();
+dataBaseConnection.connectMongodb();
 
 const server = http.createServer(app);
 const websocketServer = new WebSocketServer({ server });

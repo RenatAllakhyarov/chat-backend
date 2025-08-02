@@ -1,12 +1,13 @@
 // src/ws/handlers.ts
 import { RawData, WebSocket, WebSocketServer } from 'ws';
-import { userSocketMap, chatMessages } from '../storage/chatStorage';
 import { ClientMessage, ServerMessages } from '../types/meta';
-import { getUserByUsername } from './DataBaseService/getUserByUsername';
-import { isDbConnected } from '../db/mongo';
-import { getMessages } from './DataBaseService/getMessages';
-import { Message } from '../models/Message';
-import { saveMessage } from './DataBaseService/saveMessage';
+import { DataBaseConnection } from './DataBaseService/dataBaseConnection';
+import { getUserByUsername } from './DataBaseService/index';
+import { userSocketMap } from '../storage/chatStorage';
+import { getMessages } from './DataBaseService/index';
+import { saveMessage } from './DataBaseService/index';
+
+const dbConnection = new DataBaseConnection();
 
 export function sendingMessage(websocket: WebSocket, message: ServerMessages) {
   websocket.send(JSON.stringify(message));
@@ -30,7 +31,7 @@ export async function handleInit(
   webSocketServer: WebSocketServer,
   parsed: ClientMessage
 ) {
-  if (!isDbConnected) {
+  if (!dbConnection.getisDbConnected()) {
     sendingMessage(clientSocket, {
       type: 'error',
       message: 'Database is unavailable',
@@ -66,7 +67,7 @@ export async function handleMessage(
   webSocketServer: WebSocketServer,
   parsed: ClientMessage
 ) {
-  if (!isDbConnected) {
+  if (!dbConnection.getisDbConnected()) {
     sendingMessage(clientSocket, {
       type: 'error',
       message: 'Database is unavailable',
