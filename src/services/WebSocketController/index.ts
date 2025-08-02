@@ -2,8 +2,9 @@
 import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { ClientMessage, ServerMessages } from '../../types/meta';
 import { DataBaseConnection } from '../DataBaseConnectionService/index';
-import { DataBaseAPI } from '../DataBaseAPI/index';
 import { userSocketMap } from '../../storage/chatStorage';
+import { DataBaseAPI } from '../DataBaseAPI/index';
+
 
 const dbConnection = new DataBaseConnection();
 export class WebSocketController {

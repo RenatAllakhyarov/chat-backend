@@ -1,5 +1,5 @@
-import { WebSocketController } from '../WebSocketController';
 import type { WebSocket, WebSocketServer } from 'ws';
+import { WebSocketController } from '../WebSocketController';
 import { userSocketMap } from '../../storage/chatStorage';
 
 class ClientConnectionService {
