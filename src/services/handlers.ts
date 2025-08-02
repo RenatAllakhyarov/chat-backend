@@ -2,7 +2,7 @@
 import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { userSocketMap, chatMessages } from '../storage/chatStorage';
 import { ClientMessage, ServerMessages } from '../types/meta';
-import { Isdbconnected } from '../db/mongo';
+import { isDbConnected } from '../db/mongo';
 import { Message } from '../models/Message';
 import { User } from '../models/User';
 import { text } from 'stream/consumers';
@@ -12,29 +12,29 @@ export function sendingMessage(websocket: WebSocket, message: ServerMessages) {
 }
 
 export function parseClientMessage(
-  rawdata: RawData,
-  websocket: WebSocket
+  rawData: RawData,
+  clientSocket: WebSocket
 ): ClientMessage | undefined {
   try {
-    return JSON.parse(rawdata.toString()) as ClientMessage;
+    return JSON.parse(rawData.toString()) as ClientMessage;
   } catch {
-    sendingMessage(websocket, { type: 'error', message: 'Incorrect JSON' });
+    sendingMessage(clientSocket, { type: 'error', message: 'Incorrect JSON' });
 
     return undefined;
   }
 }
 
 export async function handleInit(
-  websocket: WebSocket,
-  websocketserver: WebSocketServer,
+  clientSocket: WebSocket,
+  webSocketServer: WebSocketServer,
   parsed: ClientMessage
 ) {
-  if (!Isdbconnected) {
-    sendingMessage(websocket, {
+  if (!isDbConnected) {
+    sendingMessage(clientSocket, {
       type: 'error',
       message: 'Database is unavailable',
     });
-    websocket.close(1000, 'DB connection failed');
+    clientSocket.close(1000, 'DB connection failed');
     return;
   }
 
@@ -43,7 +43,7 @@ export async function handleInit(
   }
 
   if (!parsed.username) {
-    sendingMessage(websocket, {
+    sendingMessage(clientSocket, {
       type: 'error',
       message: 'Write your nickname',
     });
@@ -51,7 +51,7 @@ export async function handleInit(
     return;
   }
 
-  userSocketMap.set(websocket, parsed.username);
+  userSocketMap.set(clientSocket, parsed.username);
 
   let user = await User.findOne({ username: parsed.username });
   if (!user) {
@@ -68,20 +68,20 @@ export async function handleInit(
     timestamp: dbMessage.timestamp.toLocaleString('ru-RU'),
   }));
 
-  sendingMessage(websocket, { type: 'history', messages: wsMessages });
+  sendingMessage(clientSocket, { type: 'history', messages: wsMessages });
 }
 
 export async function handleMessage(
-  websocket: WebSocket,
-  websocketserver: WebSocketServer,
+  clientSocket: WebSocket,
+  webSocketServer: WebSocketServer,
   parsed: ClientMessage
 ) {
-  if (!Isdbconnected) {
-    sendingMessage(websocket, {
+  if (!isDbConnected) {
+    sendingMessage(clientSocket, {
       type: 'error',
       message: 'Database is unavailable',
     });
-    websocket.close(1000, 'DB connection failed');
+    clientSocket.close(1000, 'DB connection failed');
     return;
   }
   if (parsed.type !== 'msg') {
@@ -90,7 +90,7 @@ export async function handleMessage(
 
   if (typeof parsed.text !== 'string') return;
 
-  const username = userSocketMap.get(websocket);
+  const username = userSocketMap.get(clientSocket);
 
   if (!username) return;
 
@@ -111,7 +111,7 @@ export async function handleMessage(
     await dbMessage.save();
   } catch (error) {}
 
-  for (const client of websocketserver.clients) {
+  for (const client of webSocketServer.clients) {
     if (client.readyState === WebSocket.OPEN) {
       sendingMessage(client, { type: 'msg', ...message });
     }
@@ -120,7 +120,11 @@ export async function handleMessage(
 
 export const messageHandlers: Record<
   string,
-  (ws: WebSocket, wss: WebSocketServer, parsed: ClientMessage) => Promise<void>
+  (
+    clientSocket: WebSocket,
+    webSocketServer: WebSocketServer,
+    parsed: ClientMessage
+  ) => Promise<void>
 > = {
   init: handleInit,
   msg: handleMessage,

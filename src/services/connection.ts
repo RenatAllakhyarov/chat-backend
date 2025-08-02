@@ -8,11 +8,11 @@ import { userSocketMap } from '../storage/chatStorage';
 
 class ClientConnectionService {
   public static clientConnection(
-    websocket: WebSocket,
-    websocketserver: WebSocketServer
+    clientSocket: WebSocket,
+    webSocketServer: WebSocketServer
   ) {
-    websocket.on('message', async (raw) => {
-      const parsed = parseClientMessage(raw, websocket);
+    clientSocket.on('message', async (raw) => {
+      const parsed = parseClientMessage(raw, clientSocket);
 
       if (!parsed) {
         return;
@@ -21,21 +21,21 @@ class ClientConnectionService {
       const handler = messageHandlers[parsed.type];
 
       if (handler) {
-        await handler(websocket, websocketserver, parsed);
+        await handler(clientSocket, webSocketServer, parsed);
       } else {
-        sendingMessage(websocket, {
+        sendingMessage(clientSocket, {
           type: 'error',
           message: 'Unknown message type',
         });
       }
     });
 
-    websocket.on('close', () => {
-      const username = userSocketMap.get(websocket);
-      userSocketMap.delete(websocket);
+    clientSocket.on('close', () => {
+      const username = userSocketMap.get(clientSocket);
+      userSocketMap.delete(clientSocket);
     });
 
-    websocket.on('error', (err) => {
+    clientSocket.on('error', (err) => {
       console.error('Error:', err);
     });
   }

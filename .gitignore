@@ -57,3 +57,9 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+
+#gitattributes
+.gitattributes
+
+#prettier
+.prettierrc
