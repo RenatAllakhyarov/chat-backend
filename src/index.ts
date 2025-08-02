@@ -2,8 +2,8 @@ import http from 'http';
 import dotenv from 'dotenv';
 import express from 'express';
 import ClientConnectionService from './services/ClientConnectionService/index';
-import { WebSocketServer } from 'ws';
 import { corsMiddleware } from './middlewares/CORS';
+import { WebSocketServer } from 'ws';
 import { DataBaseConnection } from './services/DataBaseConnectionService';
 
 dotenv.config();

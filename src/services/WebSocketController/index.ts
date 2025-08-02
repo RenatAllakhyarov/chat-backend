@@ -1,12 +1,10 @@
 // src/ws/handlers.ts
 import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { ClientMessage, ServerMessages } from '../../types/meta';
-import { DataBaseConnection } from '../DataBaseConnectionService/index';
+import { dataBaseConnection } from '../../index';
 import { userSocketMap } from '../../storage/chatStorage';
 import { DataBaseAPI } from '../DataBaseAPI/index';
 
-
-const dbConnection = new DataBaseConnection();
 export class WebSocketController {
   public static async sendingMessage(
     websocket: WebSocket,
@@ -36,7 +34,7 @@ export class WebSocketController {
     webSocketServer: WebSocketServer,
     parsed: ClientMessage
   ) {
-    if (!dbConnection.getisDbConnected()) {
+    if (!dataBaseConnection.getIsDbConnected()) {
       WebSocketController.sendingMessage(clientSocket, {
         type: 'error',
         message: 'Database is unavailable',
@@ -75,7 +73,7 @@ export class WebSocketController {
     webSocketServer: WebSocketServer,
     parsed: ClientMessage
   ) {
-    if (!dbConnection.getisDbConnected()) {
+    if (!dataBaseConnection.getIsDbConnected()) {
       WebSocketController.sendingMessage(clientSocket, {
         type: 'error',
         message: 'Database is unavailable',

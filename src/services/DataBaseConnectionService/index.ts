@@ -9,19 +9,19 @@ export class DataBaseConnection {
 
   public async connectMongodb() {
     try {
-      const dburl = process.env.MONGODB_URL;
+      const dbUrl = process.env.MONGODB_URL;
 
-      if (!dburl) {
+      if (!dbUrl) {
         throw new Error('MONGODB_URL environment variable is not defined');
       }
 
-      await mongoose.connect(dburl);
+      await mongoose.connect(dbUrl);
       this.isDbConnected = true;
     } catch (err) {
       console.error('Error connecting to MongoDB:', err);
     }
   }
-  public getisDbConnected(): boolean {
+  public getIsDbConnected(): boolean {
     return this.isDbConnected;
   }
 }
