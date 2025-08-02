@@ -2,9 +2,9 @@ import {
   parseClientMessage,
   messageHandlers,
   sendingMessage,
-} from './handlers';
+} from '../handlers';
 import type { WebSocket, WebSocketServer } from 'ws';
-import { userSocketMap } from '../storage/chatStorage';
+import { userSocketMap } from '../../storage/chatStorage';
 
 class ClientConnectionService {
   public static clientConnection(
@@ -20,14 +20,15 @@ class ClientConnectionService {
 
       const handler = messageHandlers[parsed.type];
 
-      if (handler) {
-        await handler(clientSocket, webSocketServer, parsed);
-      } else {
+      if (!handler) {
         sendingMessage(clientSocket, {
           type: 'error',
           message: 'Unknown message type',
         });
+        return;
       }
+
+      await handler(clientSocket, webSocketServer, parsed);
     });
 
     clientSocket.on('close', () => {

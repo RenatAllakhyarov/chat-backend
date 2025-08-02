@@ -1,4 +1,4 @@
-import ClientConnectionService from '../services/connection';
+import ClientConnectionService from '../services/ClientConnectionService';
 import { WebSocket, WebSocketServer } from 'ws';
 
 export function clientConnectionController(

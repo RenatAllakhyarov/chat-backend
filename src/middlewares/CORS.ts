@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-const ALLOWED_ORIGIN = 'http://localhost:5173';
+const ALLOWED_ORIGIN = process.env.CORS;
 
 export function corsMiddleware(
   request: Request,

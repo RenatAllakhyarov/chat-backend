@@ -2,10 +2,11 @@
 import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { userSocketMap, chatMessages } from '../storage/chatStorage';
 import { ClientMessage, ServerMessages } from '../types/meta';
+import { getUserByUsername } from './DataBaseService/getUserByUsername';
 import { isDbConnected } from '../db/mongo';
+import { getMessages } from './DataBaseService/getMessages';
 import { Message } from '../models/Message';
-import { User } from '../models/User';
-import { text } from 'stream/consumers';
+import { saveMessage } from './DataBaseService/saveMessage';
 
 export function sendingMessage(websocket: WebSocket, message: ServerMessages) {
   websocket.send(JSON.stringify(message));
@@ -53,22 +54,11 @@ export async function handleInit(
 
   userSocketMap.set(clientSocket, parsed.username);
 
-  let user = await User.findOne({ username: parsed.username });
-  if (!user) {
-    user = new User({ username: parsed.username });
-    await user.save();
-  } else {
-  }
+  await getUserByUsername.getOrCreateUser(parsed.username);
 
-  const dbMessages = await Message.find().sort({ timestamp: -1 }).limit(50);
-  const wsMessages = dbMessages.map((dbMessage) => ({
-    id: Math.random(),
-    username: dbMessage.sender,
-    text: dbMessage.text,
-    timestamp: dbMessage.timestamp.toLocaleString('ru-RU'),
-  }));
+  const historyMessages = await getMessages.getRecentMessages();
 
-  sendingMessage(clientSocket, { type: 'history', messages: wsMessages });
+  sendingMessage(clientSocket, { type: 'history', messages: historyMessages });
 }
 
 export async function handleMessage(
@@ -94,27 +84,25 @@ export async function handleMessage(
 
   if (!username) return;
 
-  const message = {
-    id: Math.random(),
-    username,
-    text: parsed.text,
-    timestamp: new Date().toLocaleString('ru-RU'),
-  };
-
-  const dbMessage = new Message({
-    sender: username,
-    text: parsed.text,
-    timestamp: new Date(),
-  });
-
   try {
-    await dbMessage.save();
-  } catch (error) {}
+    const message = await saveMessage.saveMessage(username, parsed.text);
+    const websocketMessage = {
+      id: message._id.toString(),
+      username: message.sender,
+      text: message.text,
+      timestamp: message.timestamp.toLocaleString('ru-RU'),
+    };
 
-  for (const client of webSocketServer.clients) {
-    if (client.readyState === WebSocket.OPEN) {
-      sendingMessage(client, { type: 'msg', ...message });
+    for (const client of webSocketServer.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        sendingMessage(client, { type: 'msg', ...websocketMessage });
+      }
     }
+  } catch (error) {
+    sendingMessage(clientSocket, {
+      type: 'error',
+      message: 'Failed to send message',
+    });
   }
 }
 
