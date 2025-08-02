@@ -1,9 +1,8 @@
-// src/ws/handlers.ts
-import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { ClientMessage, ServerMessages } from '../../types/meta';
-import { dataBaseConnection } from '../../index';
+import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { userSocketMap } from '../../storage/chatStorage';
 import { DataBaseAPI } from '../DataBaseAPI/index';
+import { dataBaseConnection } from '../../index';
 
 export class WebSocketController {
   public static async sendingMessage(

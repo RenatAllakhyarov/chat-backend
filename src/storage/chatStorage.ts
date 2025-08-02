@@ -1,5 +1,5 @@
-import { WebSocket } from 'ws';
 import { Message } from '../types/meta';
+import { WebSocket } from 'ws';
 
 export const chatMessages: Message[] = [];
 
