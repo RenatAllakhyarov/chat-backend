@@ -1,10 +1,10 @@
 import http from 'http';
 import dotenv from 'dotenv';
 import express from 'express';
-import { clientConnectionController } from './controllers/webSocketController';
+import ClientConnectionService from './services/ClientConnectionService/index';
 import { WebSocketServer } from 'ws';
 import { corsMiddleware } from './middlewares/CORS';
-import { DataBaseConnection } from './services/DataBaseService/dataBaseConnection';
+import { DataBaseConnection } from './services/DataBaseConnectionService';
 
 dotenv.config();
 
@@ -22,7 +22,7 @@ const server = http.createServer(app);
 const websocketServer = new WebSocketServer({ server });
 
 websocketServer.on('connection', (websocket) =>
-  clientConnectionController(websocket, websocketServer)
+  ClientConnectionService.clientConnection(websocket, websocketServer)
 );
 
 const PORT = process.env.PORT;

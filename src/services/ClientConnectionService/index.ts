@@ -1,8 +1,4 @@
-import {
-  parseClientMessage,
-  messageHandlers,
-  sendingMessage,
-} from '../handlers';
+import { WebSocketController } from '../WebSocketController';
 import type { WebSocket, WebSocketServer } from 'ws';
 import { userSocketMap } from '../../storage/chatStorage';
 
@@ -12,16 +8,16 @@ class ClientConnectionService {
     webSocketServer: WebSocketServer
   ) {
     clientSocket.on('message', async (raw) => {
-      const parsed = parseClientMessage(raw, clientSocket);
+      const parsed = WebSocketController.parseClientMessage(raw, clientSocket);
 
       if (!parsed) {
         return;
       }
 
-      const handler = messageHandlers[parsed.type];
+      const handler = WebSocketController.messageHandlers[parsed.type];
 
       if (!handler) {
-        sendingMessage(clientSocket, {
+        WebSocketController.sendingMessage(clientSocket, {
           type: 'error',
           message: 'Unknown message type',
         });

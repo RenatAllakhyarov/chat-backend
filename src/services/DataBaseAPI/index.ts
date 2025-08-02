@@ -1,7 +1,7 @@
 import { Message } from '../../models/Message';
 import { User } from '../../models/User';
 
-export class getMessages {
+export class DataBaseAPI {
   public static async getRecentMessages(limit: number = 50) {
     const dbMessages = await Message.find()
       .sort({ timestamp: -1 })
@@ -14,8 +14,7 @@ export class getMessages {
     }));
     return websocketMessages;
   }
-}
-export class getUserByUsername {
+
   public static async getOrCreateUser(username: string) {
     let user = await User.findOne({ username });
     if (!user) {
@@ -24,8 +23,7 @@ export class getUserByUsername {
     }
     return user;
   }
-}
-export class saveMessage {
+
   public static async saveMessage(sender: string, text: string) {
     try {
       const dbMessage = new Message({ sender, text, timestamp: new Date() });
