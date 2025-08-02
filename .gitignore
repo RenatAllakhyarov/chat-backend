@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+#enviromental variables
+.env
+
+#prettier commands
+npm run format
+npm run format:check
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -50,3 +57,9 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+
+#gitattributes
+.gitattributes
+
+#prettier
+.prettierrc
