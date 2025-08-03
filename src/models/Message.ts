@@ -4,7 +4,7 @@ import { Schema, model } from 'mongoose';
 export interface IMessage {
   sender: string;
   text: string;
-  timestamp: Date;
+  timestamp: number;
 }
 
 const messageSchema = new Schema<IMessage>({
@@ -17,8 +17,8 @@ const messageSchema = new Schema<IMessage>({
     required: true,
   },
   timestamp: {
-    type: Date,
-    default: Date.now,
+    type: Number,
+    default: Date.now(),
   },
 });
 
