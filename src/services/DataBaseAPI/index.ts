@@ -10,7 +10,7 @@ export class DataBaseAPI {
       id: dbMessage._id.toString(),
       username: dbMessage.sender,
       text: dbMessage.text,
-      timestamp: dbMessage.timestamp.toLocaleString('ru-RU'),
+      timestamp: dbMessage.timestamp,
     }));
     return websocketMessages;
   }
@@ -26,7 +26,10 @@ export class DataBaseAPI {
 
   public static async saveMessage(sender: string, text: string) {
     try {
-      const dbMessage = new Message({ sender, text, timestamp: new Date() });
+      const dbMessage = new Message({
+        sender,
+        text,
+      });
       await dbMessage.save();
       return dbMessage;
     } catch (error) {

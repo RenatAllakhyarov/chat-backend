@@ -96,12 +96,15 @@ export class WebSocketController {
         id: message._id.toString(),
         username: message.sender,
         text: message.text,
-        timestamp: message.timestamp.toLocaleString('ru-RU'),
+        timestamp: message.timestamp,
       };
 
       for (const client of webSocketServer.clients) {
         if (client.readyState === WebSocket.OPEN) {
-          WebSocketController.sendingMessage(client, { type: 'msg', ...websocketMessage });
+          WebSocketController.sendingMessage(client, {
+            type: 'msg',
+            ...websocketMessage,
+          });
         }
       }
     } catch (error) {
