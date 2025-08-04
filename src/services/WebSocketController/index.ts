@@ -1,6 +1,6 @@
 import { ClientMessage, ServerMessages } from '../../types/meta';
-import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { userSocketMap } from '../../storage/chatStorage';
+import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { DataBaseAPI } from '../DataBaseAPI/index';
 import { dataBaseConnection } from '../../index';
 
@@ -56,8 +56,16 @@ export class WebSocketController {
     }
 
     userSocketMap.set(clientSocket, parsed.username);
+    console.log('Added to map:', parsed.username);
 
     await DataBaseAPI.getOrCreateUser(parsed.username);
+
+    const onlineUsers = await DataBaseAPI.getOnlineUsers();
+
+    WebSocketController.sendingMessage(clientSocket, {
+      type: 'online_users',
+      users: onlineUsers,
+    });
 
     const historyMessages = await DataBaseAPI.getRecentMessages();
 
@@ -90,6 +98,10 @@ export class WebSocketController {
 
     if (!username) return;
 
+    console.log('Setting user online:', username);
+    await DataBaseAPI.setUserOnline(username);
+    console.log('User online set successfully');
+
     try {
       const message = await DataBaseAPI.saveMessage(username, parsed.text);
       const websocketMessage = {
@@ -112,6 +124,50 @@ export class WebSocketController {
         type: 'error',
         message: 'Failed to send message',
       });
+    }
+  }
+
+  public static async handleUserDisconnect(
+    clientSocket: WebSocket,
+    webSocketServer: WebSocketServer
+  ) {
+    console.log('=== User disconnect handler called ===');
+    try {
+      const username = userSocketMap.get(clientSocket);
+      console.log('Disconnect attempt for:', username);
+
+      if (!username) {
+        console.log('No username found for socket');
+        return;
+      }
+
+      console.log('Setting user offline:', username);
+      await DataBaseAPI.setUserOffline(username);
+      userSocketMap.delete(clientSocket);
+      console.log('User removed from map:', username);
+
+      await this.broadcastOnlineUsers(webSocketServer);
+    } catch (error) {
+      console.error(`Failed to set user offline`, error);
+    }
+  }
+
+  public static async broadcastOnlineUsers(websocketServer: WebSocketServer) {
+    try {
+      const onlineUsers = await DataBaseAPI.getOnlineUsers();
+
+      const message: ServerMessages = {
+        type: 'online_users',
+        users: onlineUsers,
+      };
+
+      for (const client of websocketServer.clients) {
+        if (client.readyState === WebSocket.OPEN) {
+          WebSocketController.sendingMessage(client, message);
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to send list of online users`, error);
     }
   }
 

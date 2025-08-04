@@ -29,7 +29,10 @@ class ClientConnectionService {
 
     clientSocket.on('close', () => {
       const username = userSocketMap.get(clientSocket);
-      userSocketMap.delete(clientSocket);
+      console.log('Socket closed, username:', username);
+      console.log('Socket closed, map size:', userSocketMap.size);
+      console.log('Socket exists in map:', userSocketMap.has(clientSocket));
+      WebSocketController.handleUserDisconnect(clientSocket, webSocketServer);
     });
 
     clientSocket.on('error', (err) => {
