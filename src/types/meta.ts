@@ -15,7 +15,11 @@ export type ServerMessages =
       timestamp: number;
       id: string;
     }
-  | { type: 'online_users'; users: string[] };
+  | {
+      type: 'usersStatus';
+      users: Array<{ username: string; isOnline: boolean }>;
+    }
+  | { type: 'userStatusChanged'; username: string; isOnline: boolean };
 
 export type ClientMessage =
   | { type: 'init'; username: string; id: string }

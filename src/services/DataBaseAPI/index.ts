@@ -43,7 +43,7 @@ export class DataBaseAPI {
     console.log('Setting user online in DB:', username);
     try {
       const user = await User.findOneAndUpdate(
-        { username: username },
+        { username },
         {
           username: username,
           isOnline: true,
@@ -88,14 +88,18 @@ export class DataBaseAPI {
     }
   }
 
-  public static async getOnlineUsers(): Promise<string[]> {
+  public static async getAllUsersWithStatus(): Promise<
+    Array<{ username: string; isOnline: boolean }>
+  > {
     try {
-      const users = await User.find({ isOnline: true }).select('username');
-      const usernames = users.map((user) => user.username);
+      const users = await User.find().select('username isOnline');
 
-      return usernames;
+      return users.map((user) => ({
+        username: user.username,
+        isOnline: user.isOnline,
+      }));
     } catch (error) {
-      console.error('Failed to get online users', error);
+      console.error('Failed to get user status', error);
       throw error;
     }
   }

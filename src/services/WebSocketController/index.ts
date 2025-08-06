@@ -56,16 +56,18 @@ export class WebSocketController {
     }
 
     userSocketMap.set(clientSocket, parsed.username);
+
     console.log('Added to map:', parsed.username);
 
     await DataBaseAPI.getOrCreateUser(parsed.username);
 
-    const onlineUsers = await DataBaseAPI.getOnlineUsers();
+    console.log('Setting user online:', parsed.username);
 
-    WebSocketController.sendingMessage(clientSocket, {
-      type: 'online_users',
-      users: onlineUsers,
-    });
+    await DataBaseAPI.setUserOnline(parsed.username);
+
+    console.log('User online set successfully');
+
+    await WebSocketController.sendFullUsersStatus(clientSocket);
 
     const historyMessages = await DataBaseAPI.getRecentMessages();
 
@@ -97,10 +99,6 @@ export class WebSocketController {
     const username = userSocketMap.get(clientSocket);
 
     if (!username) return;
-
-    console.log('Setting user online:', username);
-    await DataBaseAPI.setUserOnline(username);
-    console.log('User online set successfully');
 
     try {
       const message = await DataBaseAPI.saveMessage(username, parsed.text);
@@ -142,32 +140,73 @@ export class WebSocketController {
       }
 
       console.log('Setting user offline:', username);
+
       await DataBaseAPI.setUserOffline(username);
+
+      await this.broadcastUserStatusChange(username, false, webSocketServer);
+
       userSocketMap.delete(clientSocket);
+
       console.log('User removed from map:', username);
 
-      await this.broadcastOnlineUsers(webSocketServer);
+      await this.broadcastAllUsers(webSocketServer);
     } catch (error) {
       console.error(`Failed to set user offline`, error);
     }
   }
 
-  public static async broadcastOnlineUsers(websocketServer: WebSocketServer) {
+  private static async broadcastAllUsers(websocketServer: WebSocketServer) {
     try {
-      const onlineUsers = await DataBaseAPI.getOnlineUsers();
+      const allUserswithstatus = await DataBaseAPI.getAllUsersWithStatus();
 
       const message: ServerMessages = {
-        type: 'online_users',
-        users: onlineUsers,
+        type: 'usersStatus',
+        users: allUserswithstatus,
       };
 
       for (const client of websocketServer.clients) {
-        if (client.readyState === WebSocket.OPEN) {
-          WebSocketController.sendingMessage(client, message);
-        }
+        WebSocketController.sendingMessage(client, message);
       }
     } catch (error) {
-      console.error(`Failed to send list of online users`, error);
+      console.error(`Failed to send list of all users with status`, error);
+    }
+  }
+
+  private static async sendFullUsersStatus(clientSocket: WebSocket) {
+    try {
+      const allUsersswithstatus = await DataBaseAPI.getAllUsersWithStatus();
+
+      const message: ServerMessages = {
+        type: 'usersStatus',
+        users: allUsersswithstatus,
+      };
+
+      WebSocketController.sendingMessage(clientSocket, message);
+    } catch (error) {
+      console.error(`Failed to send full user status`, error);
+    }
+  }
+
+  private static async broadcastUserStatusChange(
+    username: string,
+    isOnline: boolean,
+    webSocketServer: WebSocketServer
+  ) {
+    try {
+      const message: ServerMessages = {
+        type: 'userStatusChanged',
+        username: username,
+        isOnline: isOnline,
+      };
+
+      for (const clients of webSocketServer.clients) {
+        if (clients.readyState !== WebSocket.OPEN) {
+          continue;
+        }
+        WebSocketController.sendingMessage(clients, message);
+      }
+    } catch (error) {
+      console.error(`Failed to Change user status ${username}`, error);
     }
   }
 
