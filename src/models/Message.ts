@@ -18,7 +18,7 @@ const messageSchema = new Schema<IMessage>({
   },
   timestamp: {
     type: Number,
-    default: Date.now(),
+    required: true,
   },
 });
 
