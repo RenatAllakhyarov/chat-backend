@@ -159,7 +159,7 @@ export class WebSocketController {
       const allUsersWithStatus = await DataBaseAPI.getAllUsersData();
 
       const message: ServerMessages = {
-        type: 'usersStatus',
+        type: 'usersData',
         users: allUsersWithStatus,
       };
 
@@ -176,7 +176,7 @@ export class WebSocketController {
       const allUsersWithStatus = await DataBaseAPI.getAllUsersData();
 
       const message: ServerMessages = {
-        type: 'usersStatus',
+        type: 'usersData',
         users: allUsersWithStatus,
       };
 

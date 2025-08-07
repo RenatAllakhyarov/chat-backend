@@ -22,7 +22,7 @@ export type ServerMessages =
       id: string;
     }
   | {
-      type: 'usersStatus';
+      type: 'usersData';
       users: IUser[];
     }
   | { type: 'userStatusChanged'; id: string; isOnline: boolean };
