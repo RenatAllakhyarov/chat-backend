@@ -25,7 +25,7 @@ export type ServerMessages =
       type: 'usersData';
       users: IUser[];
     }
-  | { type: 'userStatusChanged'; id: string; isOnline: boolean };
+  | { type: 'userStatusChanged'; username: string, id: string; isOnline: boolean };
 
 export type ClientMessage =
   | { type: 'init'; username: string; id: string }
