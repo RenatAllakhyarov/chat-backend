@@ -5,10 +5,27 @@ export interface Message {
   timestamp: number;
 }
 
+export interface IUser {
+  id: string;
+  username: string;
+  isOnline: boolean;
+}
+
 export type ServerMessages =
   | { type: 'history'; messages: Message[] }
   | { type: 'error'; message: string }
-  | { type: 'msg'; username: string; text: string; timestamp: number };
+  | {
+      type: 'msg';
+      username: string;
+      text: string;
+      timestamp: number;
+      id: string;
+    }
+  | {
+      type: 'usersData';
+      users: IUser[];
+    }
+  | { type: 'userStatusChanged'; id: string; isOnline: boolean };
 
 export type ClientMessage =
   | { type: 'init'; username: string; id: string }

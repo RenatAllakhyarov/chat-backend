@@ -1,15 +1,18 @@
 import { ClientMessage, ServerMessages } from '../../types/meta';
-import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { userSocketMap } from '../../storage/chatStorage';
+import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { DataBaseAPI } from '../DataBaseAPI/index';
 import { dataBaseConnection } from '../../index';
+import { User } from '../../models/User';
 
 export class WebSocketController {
   public static async sendingMessage(
     websocket: WebSocket,
-    message: ServerMessages
+    type: string,
+    messageData: any
   ) {
-    websocket.send(JSON.stringify(message));
+    const fullMessage = { type, ...messageData };
+    websocket.send(JSON.stringify(fullMessage));
   }
 
   public static parseClientMessage(
@@ -19,8 +22,7 @@ export class WebSocketController {
     try {
       return JSON.parse(rawData.toString()) as ClientMessage;
     } catch {
-      WebSocketController.sendingMessage(clientSocket, {
-        type: 'error',
+      WebSocketController.sendingMessage(clientSocket, 'error', {
         message: 'Incorrect JSON',
       });
 
@@ -34,10 +36,10 @@ export class WebSocketController {
     parsed: ClientMessage
   ) {
     if (!dataBaseConnection.getIsDbConnected()) {
-      WebSocketController.sendingMessage(clientSocket, {
-        type: 'error',
+      WebSocketController.sendingMessage(clientSocket, 'error', {
         message: 'Database is unavailable',
       });
+
       clientSocket.close(1000, 'DB connection failed');
       return;
     }
@@ -47,8 +49,7 @@ export class WebSocketController {
     }
 
     if (!parsed.username) {
-      WebSocketController.sendingMessage(clientSocket, {
-        type: 'error',
+      WebSocketController.sendingMessage(clientSocket, 'error', {
         message: 'Write your nickname',
       });
 
@@ -57,12 +58,21 @@ export class WebSocketController {
 
     userSocketMap.set(clientSocket, parsed.username);
 
-    await DataBaseAPI.getOrCreateUser(parsed.username);
+    console.log('Added to map:', parsed.username);
+
+    await DataBaseAPI.checkingUserExistence(parsed.username);
+
+    console.log('Setting user online:', parsed.username);
+
+    await DataBaseAPI.setUserOnline(parsed.username);
+
+    console.log('User online set successfully');
+
+    await WebSocketController.sendAllUsers(clientSocket);
 
     const historyMessages = await DataBaseAPI.getRecentMessages();
 
-    WebSocketController.sendingMessage(clientSocket, {
-      type: 'history',
+    WebSocketController.sendingMessage(clientSocket, 'history', {
       messages: historyMessages,
     });
   }
@@ -73,11 +83,12 @@ export class WebSocketController {
     parsed: ClientMessage
   ) {
     if (!dataBaseConnection.getIsDbConnected()) {
-      WebSocketController.sendingMessage(clientSocket, {
-        type: 'error',
+      WebSocketController.sendingMessage(clientSocket, 'error', {
         message: 'Database is unavailable',
       });
+
       clientSocket.close(1000, 'DB connection failed');
+
       return;
     }
     if (parsed.type !== 'msg') {
@@ -101,17 +112,107 @@ export class WebSocketController {
 
       for (const client of webSocketServer.clients) {
         if (client.readyState === WebSocket.OPEN) {
-          WebSocketController.sendingMessage(client, {
-            type: 'msg',
+          WebSocketController.sendingMessage(client, 'msg', {
             ...websocketMessage,
           });
         }
       }
     } catch (error) {
-      WebSocketController.sendingMessage(clientSocket, {
-        type: 'error',
+      WebSocketController.sendingMessage(clientSocket, 'error', {
         message: 'Failed to send message',
       });
+    }
+  }
+
+  public static async handleUserDisconnect(
+    clientSocket: WebSocket,
+    webSocketServer: WebSocketServer
+  ) {
+    console.log('=== User disconnect handler called ===');
+    try {
+      const username = userSocketMap.get(clientSocket);
+      console.log('Disconnect attempt for:', username);
+
+      if (!username) {
+        console.log('No username found for socket');
+        return;
+      }
+
+      console.log('Setting user offline:', username);
+
+      await DataBaseAPI.setUserOffline(username);
+
+      await this.broadcastUserStatusChange(username, false, webSocketServer);
+
+      userSocketMap.delete(clientSocket);
+
+      console.log('User removed from map:', username);
+
+      await this.broadcastAllUsers(webSocketServer);
+    } catch (error) {
+      console.error(`Failed to set user offline`, error);
+    }
+  }
+
+  private static async broadcastAllUsers(websocketServer: WebSocketServer) {
+    try {
+      const allUsersWithStatus = await DataBaseAPI.getAllUsersData();
+
+      const message: ServerMessages = {
+        type: 'usersData',
+        users: allUsersWithStatus,
+      };
+
+      for (const client of websocketServer.clients) {
+        WebSocketController.sendingMessage(client, 'userStatus', message);
+      }
+    } catch (error) {
+      console.error(`Failed to send list of all users with status`, error);
+    }
+  }
+
+  private static async sendAllUsers(clientSocket: WebSocket) {
+    try {
+      const allUsersWithStatus = await DataBaseAPI.getAllUsersData();
+
+      const message: ServerMessages = {
+        type: 'usersData',
+        users: allUsersWithStatus,
+      };
+
+      WebSocketController.sendingMessage(clientSocket, 'userStatus', message);
+    } catch (error) {
+      console.error(`Failed to send full user status`, error);
+    }
+  }
+
+  private static async broadcastUserStatusChange(
+    username: string,
+    isOnline: boolean,
+    webSocketServer: WebSocketServer
+  ) {
+    try {
+      const user = await User.findOne({ username });
+
+      if (!user) {
+        console.error(`User ${username} not found`);
+        return;
+      }
+
+      const message: ServerMessages = {
+        type: 'userStatusChanged',
+        id: user._id.toString(),
+        isOnline: isOnline,
+      };
+
+      for (const clients of webSocketServer.clients) {
+        if (clients.readyState !== WebSocket.OPEN) {
+          continue;
+        }
+        WebSocketController.sendingMessage(clients, 'userStatus', message);
+      }
+    } catch (error) {
+      console.error(`Failed to Change user status ${username}`, error);
     }
   }
 
