@@ -56,6 +56,8 @@ export class WebSocketController {
       return;
     }
 
+    const username = parsed.username
+
     userSocketMap.set(clientSocket, parsed.username);
 
     console.log('Added to map:', parsed.username);
@@ -71,6 +73,8 @@ export class WebSocketController {
     await WebSocketController.sendAllUsers(clientSocket);
 
     const historyMessages = await DataBaseAPI.getRecentMessages();
+
+    await WebSocketController.broadcastUserStatusChange(username, true, webSocketServer);
 
     WebSocketController.sendingMessage(clientSocket, 'history', {
       messages: historyMessages,
@@ -200,6 +204,7 @@ export class WebSocketController {
       }
 
       const message: ServerMessages = {
+        username: username,
         type: 'userStatusChanged',
         id: user._id.toString(),
         isOnline: isOnline,

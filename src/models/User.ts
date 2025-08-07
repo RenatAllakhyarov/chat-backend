@@ -14,6 +14,7 @@ const userSchema = new Schema<IUser>({
   },
   isOnline: {
     type: Boolean,
+    default: false,
     required: true,
   },
 });
