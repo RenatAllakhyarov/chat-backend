@@ -1,6 +1,5 @@
 import { Message } from '../../models/Message';
-import { IUser } from '../../models/User';
-import { UserStatus } from '../../types/meta';
+import { IUser } from '../../types/meta';
 import { User } from '../../models/User';
 
 export class DataBaseAPI {
@@ -49,7 +48,6 @@ export class DataBaseAPI {
           isOnline: true,
         },
         {
-          upsert: true,
           new: true,
         }
       );
@@ -83,7 +81,7 @@ export class DataBaseAPI {
     }
   }
 
-  public static async ensureUserExists(): Promise<UserStatus[]> {
+  public static async getAllUsersData(): Promise<IUser[]> {
     try {
       const users = await User.find();
 

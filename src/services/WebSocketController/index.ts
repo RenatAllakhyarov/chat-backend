@@ -3,6 +3,7 @@ import { userSocketMap } from '../../storage/chatStorage';
 import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { DataBaseAPI } from '../DataBaseAPI/index';
 import { dataBaseConnection } from '../../index';
+import { User } from '../../models/User';
 
 export class WebSocketController {
   public static async sendingMessage(
@@ -155,11 +156,11 @@ export class WebSocketController {
 
   private static async broadcastAllUsers(websocketServer: WebSocketServer) {
     try {
-      const allUserswithstatus = await DataBaseAPI.ensureUserExists();
+      const allUsersWithStatus = await DataBaseAPI.getAllUsersData();
 
       const message: ServerMessages = {
         type: 'usersStatus',
-        users: allUserswithstatus,
+        users: allUsersWithStatus,
       };
 
       for (const client of websocketServer.clients) {
@@ -172,7 +173,7 @@ export class WebSocketController {
 
   private static async sendAllUsers(clientSocket: WebSocket) {
     try {
-      const allUsersWithStatus = await DataBaseAPI.ensureUserExists();
+      const allUsersWithStatus = await DataBaseAPI.getAllUsersData();
 
       const message: ServerMessages = {
         type: 'usersStatus',
@@ -191,9 +192,16 @@ export class WebSocketController {
     webSocketServer: WebSocketServer
   ) {
     try {
+      const user = await User.findOne({ username });
+
+      if (!user) {
+        console.error(`User ${username} not found`);
+        return;
+      }
+
       const message: ServerMessages = {
         type: 'userStatusChanged',
-        username: username,
+        id: user._id.toString(),
         isOnline: isOnline,
       };
 

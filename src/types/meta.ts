@@ -5,7 +5,7 @@ export interface Message {
   timestamp: number;
 }
 
-export interface UserStatus {
+export interface IUser {
   id: string;
   username: string;
   isOnline: boolean;
@@ -23,9 +23,9 @@ export type ServerMessages =
     }
   | {
       type: 'usersStatus';
-      users: UserStatus[];
+      users: IUser[];
     }
-  | { type: 'userStatusChanged'; username: string; isOnline: boolean };
+  | { type: 'userStatusChanged'; id: string; isOnline: boolean };
 
 export type ClientMessage =
   | { type: 'init'; username: string; id: string }
