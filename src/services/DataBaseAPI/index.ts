@@ -1,5 +1,6 @@
 import { Message } from '../../models/Message';
 import { IUser } from '../../models/User';
+import { UserStatus } from '../../types/meta';
 import { User } from '../../models/User';
 
 export class DataBaseAPI {
@@ -16,7 +17,7 @@ export class DataBaseAPI {
     return websocketMessages;
   }
 
-  public static async getOrCreateUser(username: string) {
+  public static async checkingUserExistence(username: string) {
     let user = await User.findOne({ username });
     if (!user) {
       user = new User({ username });
@@ -39,13 +40,12 @@ export class DataBaseAPI {
     }
   }
 
-  public static async setUserOnline(username: string): Promise<IUser> {
+  public static async setUserOnline(username: string): Promise<void> {
     console.log('Setting user online in DB:', username);
     try {
       const user = await User.findOneAndUpdate(
         { username },
         {
-          username: username,
           isOnline: true,
         },
         {
@@ -53,16 +53,13 @@ export class DataBaseAPI {
           new: true,
         }
       );
-
-      console.log('User online result:', user?.username, user?.isOnline);
-      return user;
     } catch (error) {
       console.error('Failed to set user online status', error);
       throw error;
     }
   }
 
-  public static async setUserOffline(username: string): Promise<IUser> {
+  public static async setUserOffline(username: string): Promise<void> {
     try {
       console.log('Setting user offline in DB:', username);
       const user = await User.findOneAndUpdate(
@@ -80,21 +77,18 @@ export class DataBaseAPI {
       if (!user) {
         throw new Error(`User ${username} not found`);
       }
-
-      return user;
     } catch (error) {
       console.error('Failed to set user offline status', error);
       throw error;
     }
   }
 
-  public static async getAllUsersWithStatus(): Promise<
-    Array<{ username: string; isOnline: boolean }>
-  > {
+  public static async ensureUserExists(): Promise<UserStatus[]> {
     try {
-      const users = await User.find().select('username isOnline');
+      const users = await User.find();
 
       return users.map((user) => ({
+        id: user._id.toString(),
         username: user.username,
         isOnline: user.isOnline,
       }));

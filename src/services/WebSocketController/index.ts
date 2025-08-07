@@ -7,9 +7,11 @@ import { dataBaseConnection } from '../../index';
 export class WebSocketController {
   public static async sendingMessage(
     websocket: WebSocket,
-    message: ServerMessages
+    type: string,
+    messageData: any
   ) {
-    websocket.send(JSON.stringify(message));
+    const fullMessage = { type, ...messageData };
+    websocket.send(JSON.stringify(fullMessage));
   }
 
   public static parseClientMessage(
@@ -19,8 +21,7 @@ export class WebSocketController {
     try {
       return JSON.parse(rawData.toString()) as ClientMessage;
     } catch {
-      WebSocketController.sendingMessage(clientSocket, {
-        type: 'error',
+      WebSocketController.sendingMessage(clientSocket, 'error', {
         message: 'Incorrect JSON',
       });
 
@@ -34,10 +35,10 @@ export class WebSocketController {
     parsed: ClientMessage
   ) {
     if (!dataBaseConnection.getIsDbConnected()) {
-      WebSocketController.sendingMessage(clientSocket, {
-        type: 'error',
+      WebSocketController.sendingMessage(clientSocket, 'error', {
         message: 'Database is unavailable',
       });
+
       clientSocket.close(1000, 'DB connection failed');
       return;
     }
@@ -47,8 +48,7 @@ export class WebSocketController {
     }
 
     if (!parsed.username) {
-      WebSocketController.sendingMessage(clientSocket, {
-        type: 'error',
+      WebSocketController.sendingMessage(clientSocket, 'error', {
         message: 'Write your nickname',
       });
 
@@ -59,7 +59,7 @@ export class WebSocketController {
 
     console.log('Added to map:', parsed.username);
 
-    await DataBaseAPI.getOrCreateUser(parsed.username);
+    await DataBaseAPI.checkingUserExistence(parsed.username);
 
     console.log('Setting user online:', parsed.username);
 
@@ -67,12 +67,11 @@ export class WebSocketController {
 
     console.log('User online set successfully');
 
-    await WebSocketController.sendFullUsersStatus(clientSocket);
+    await WebSocketController.sendAllUsers(clientSocket);
 
     const historyMessages = await DataBaseAPI.getRecentMessages();
 
-    WebSocketController.sendingMessage(clientSocket, {
-      type: 'history',
+    WebSocketController.sendingMessage(clientSocket, 'history', {
       messages: historyMessages,
     });
   }
@@ -83,11 +82,12 @@ export class WebSocketController {
     parsed: ClientMessage
   ) {
     if (!dataBaseConnection.getIsDbConnected()) {
-      WebSocketController.sendingMessage(clientSocket, {
-        type: 'error',
+      WebSocketController.sendingMessage(clientSocket, 'error', {
         message: 'Database is unavailable',
       });
+
       clientSocket.close(1000, 'DB connection failed');
+
       return;
     }
     if (parsed.type !== 'msg') {
@@ -111,15 +111,13 @@ export class WebSocketController {
 
       for (const client of webSocketServer.clients) {
         if (client.readyState === WebSocket.OPEN) {
-          WebSocketController.sendingMessage(client, {
-            type: 'msg',
+          WebSocketController.sendingMessage(client, 'msg', {
             ...websocketMessage,
           });
         }
       }
     } catch (error) {
-      WebSocketController.sendingMessage(clientSocket, {
-        type: 'error',
+      WebSocketController.sendingMessage(clientSocket, 'error', {
         message: 'Failed to send message',
       });
     }
@@ -157,7 +155,7 @@ export class WebSocketController {
 
   private static async broadcastAllUsers(websocketServer: WebSocketServer) {
     try {
-      const allUserswithstatus = await DataBaseAPI.getAllUsersWithStatus();
+      const allUserswithstatus = await DataBaseAPI.ensureUserExists();
 
       const message: ServerMessages = {
         type: 'usersStatus',
@@ -165,23 +163,23 @@ export class WebSocketController {
       };
 
       for (const client of websocketServer.clients) {
-        WebSocketController.sendingMessage(client, message);
+        WebSocketController.sendingMessage(client, 'userStatus', message);
       }
     } catch (error) {
       console.error(`Failed to send list of all users with status`, error);
     }
   }
 
-  private static async sendFullUsersStatus(clientSocket: WebSocket) {
+  private static async sendAllUsers(clientSocket: WebSocket) {
     try {
-      const allUsersswithstatus = await DataBaseAPI.getAllUsersWithStatus();
+      const allUsersWithStatus = await DataBaseAPI.ensureUserExists();
 
       const message: ServerMessages = {
         type: 'usersStatus',
-        users: allUsersswithstatus,
+        users: allUsersWithStatus,
       };
 
-      WebSocketController.sendingMessage(clientSocket, message);
+      WebSocketController.sendingMessage(clientSocket, 'userStatus', message);
     } catch (error) {
       console.error(`Failed to send full user status`, error);
     }
@@ -203,7 +201,7 @@ export class WebSocketController {
         if (clients.readyState !== WebSocket.OPEN) {
           continue;
         }
-        WebSocketController.sendingMessage(clients, message);
+        WebSocketController.sendingMessage(clients, 'userStatus', message);
       }
     } catch (error) {
       console.error(`Failed to Change user status ${username}`, error);

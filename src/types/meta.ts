@@ -5,6 +5,12 @@ export interface Message {
   timestamp: number;
 }
 
+export interface UserStatus {
+  id: string;
+  username: string;
+  isOnline: boolean;
+}
+
 export type ServerMessages =
   | { type: 'history'; messages: Message[] }
   | { type: 'error'; message: string }
@@ -17,7 +23,7 @@ export type ServerMessages =
     }
   | {
       type: 'usersStatus';
-      users: Array<{ username: string; isOnline: boolean }>;
+      users: UserStatus[];
     }
   | { type: 'userStatusChanged'; username: string; isOnline: boolean };
 

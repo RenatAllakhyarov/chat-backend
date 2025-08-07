@@ -17,10 +17,10 @@ class ClientConnectionService {
       const handler = WebSocketController.messageHandlers[parsed.type];
 
       if (!handler) {
-        WebSocketController.sendingMessage(clientSocket, {
-          type: 'error',
+        WebSocketController.sendingMessage(clientSocket, 'error', {
           message: 'Unknown message type',
         });
+
         return;
       }
 
@@ -29,9 +29,11 @@ class ClientConnectionService {
 
     clientSocket.on('close', () => {
       const username = userSocketMap.get(clientSocket);
+
       console.log('Socket closed, username:', username);
       console.log('Socket closed, map size:', userSocketMap.size);
       console.log('Socket exists in map:', userSocketMap.has(clientSocket));
+
       WebSocketController.handleUserDisconnect(clientSocket, webSocketServer);
     });
 
