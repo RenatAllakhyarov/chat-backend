@@ -6,21 +6,19 @@ import fs from 'fs';
 
 const router = express.Router();
 
-// Функция для создания директорий
 const ensureDirExists = (dirPath: string) => {
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
   }
 };
 
-// Убедиться, что upload директории существуют
 ensureDirExists(path.join(process.cwd(), 'uploads', 'audio'));
 ensureDirExists(path.join(process.cwd(), 'uploads', 'files'));
 
-// Настройка хранения для аудио файлов
-const audioStorage = multer.diskStorage({
+const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(process.cwd(), 'uploads', 'audio');
+    const uploadType = file.fieldname === 'audio' ? 'audio' : 'files';
+    const dir = path.join(process.cwd(), 'uploads', uploadType);
     cb(null, dir);
   },
   filename: (req, file, cb) => {
@@ -29,84 +27,89 @@ const audioStorage = multer.diskStorage({
   }
 });
 
-// Настройка хранения для других файлов
-const fileStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(process.cwd(), 'uploads', 'files');
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
-    cb(null, uniqueName);
-  }
-});
-
-// Middleware для аудио
 const uploadAudio = multer({ 
-  storage: audioStorage,
+  storage: storage,
   limits: {
-    fileSize: 20 * 1024 * 1024 // 20MB максимум
+    fileSize: 20 * 1024 * 1024 
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4'];
+    const allowedTypes = [
+      'audio/mpeg',  
+      'audio/wav',   
+      'audio/ogg',   
+      'audio/aac',   
+      'audio/x-m4a', 
+      'audio/mp4',   
+      'audio/webm'   
+    ];
+    
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Неподдерживаемый тип аудио файла') as any, false);
+      cb(new Error(`File type is not supported: ${file.mimetype}`));
     }
   }
-});
+}).single('audio'); 
 
-// Middleware для других файлов
-const uploadFile = multer({ 
-  storage: fileStorage,
+const uploadFiles = multer({ 
+  storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB максимум
+    fileSize: 10 * 1024 * 1024 
   }
-});
+}).single('file'); 
 
-// Endpoint для загрузки аудио
-router.post('/audio', uploadAudio.single('audio'), (req, res) => {
-  try {
+router.post('/audio', (req, res) => {
+  uploadAudio(req, res, (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ error: err.message });
+      } else if (err) {
+        return res.status(400).json({ error: err.message });
+      }
+    }
+
     if (!req.file) {
-    res.status(400).json({ error: 'Файл не загружен' });
-    return;
+      return res.status(400).json({ error: 'File is not downloaded' });
     }
 
     const audioUrl = `/uploads/audio/${req.file.filename}`;
     const duration = req.body.duration ? parseInt(req.body.duration) : 0;
 
     res.json({
+      success: true,
       audioUrl,
       duration,
       fileName: req.file.originalname,
       mimeType: req.file.mimetype,
       size: req.file.size
     });
-  } catch (error) {
-    res.status(500).json({ error: 'Ошибка загрузки файла' });
-  }
+  });
 });
 
-// Endpoint для загрузки других файлов
-router.post('/files', uploadFile.single('file'), (req, res) => {
-  try {
+router.post('/files', (req, res) => {
+  uploadFiles(req, res, (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ error: err.message });
+      } else if (err) {
+        return res.status(400).json({ error: err.message });
+      }
+    }
+
     if (!req.file) {
-     res.status(400).json({ error: 'Файл не загружен' });
-     return;
+      return res.status(400).json({ error: 'File is not downloaded' });
     }
 
     const fileUrl = `/uploads/files/${req.file.filename}`;
 
     res.json({
+      success: true,
       fileUrl,
       fileName: req.file.originalname,
       mimeType: req.file.mimetype,
       size: req.file.size
     });
-  } catch (error) {
-    res.status(500).json({ error: 'Ошибка загрузки файла' });
-  }
+  });
 });
 
 export default router;
