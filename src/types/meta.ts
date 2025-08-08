@@ -1,8 +1,26 @@
-export interface Message {
+export interface BaseMessage {
   id: string;
   username: string;
-  text: string;
   timestamp: number;
+}
+
+export interface TextMessage extends BaseMessage {
+  type: 'text';
+  text: string;
+}
+
+export interface AudioMessage extends BaseMessage {
+  type: 'audio';
+  audioUrl: string;
+  duration: number;
+}
+
+export interface FileMessage extends BaseMessage {
+  type: 'file';
+  fileUrl: string;
+  originalFileName: string;
+  mimeType: string;
+  size: number;
 }
 
 export interface IUser {
@@ -11,22 +29,34 @@ export interface IUser {
   isOnline: boolean;
 }
 
+export type WebSocketMessage = TextMessage | FileMessage | AudioMessage;
+
 export type ServerMessages =
-  | { type: 'history'; messages: Message[] }
+  | { type: 'history'; messages: WebSocketMessage[] }
   | { type: 'error'; message: string }
   | {
       type: 'msg';
-      username: string;
-      text: string;
-      timestamp: number;
-      id: string;
+      message: WebSocketMessage;
     }
   | {
       type: 'usersData';
       users: IUser[];
     }
-  | { type: 'userStatusChanged'; username: string, id: string; isOnline: boolean };
+  | {
+      type: 'userStatusChanged';
+      username: string;
+      id: string;
+      isOnline: boolean;
+    };
 
 export type ClientMessage =
   | { type: 'init'; username: string; id: string }
-  | { type: 'msg'; text: string };
+  | { type: 'textMessage'; text: string }
+  | { type: 'audioMessage'; audioUrl: string; duration: number }
+  | {
+      type: 'fileMessage';
+      fileUrl: string;
+      fileName: string;
+      mimeType: string;
+      size?: number;
+    };

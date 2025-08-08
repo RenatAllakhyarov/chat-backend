@@ -37,3 +37,6 @@ package-lock.json text eol=lf
 *.eot binary
 *.woff binary
 *.woff2 binary 
+
+#uploads
+.uploads

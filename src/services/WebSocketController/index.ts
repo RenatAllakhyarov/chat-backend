@@ -1,3 +1,4 @@
+import { MessageHandlerService } from '../../MessageTypeHandlerService';
 import { ClientMessage, ServerMessages } from '../../types/meta';
 import { userSocketMap } from '../../storage/chatStorage';
 import { RawData, WebSocket, WebSocketServer } from 'ws';
@@ -56,7 +57,7 @@ export class WebSocketController {
       return;
     }
 
-    const username = parsed.username
+    const username = parsed.username;
 
     userSocketMap.set(clientSocket, parsed.username);
 
@@ -74,7 +75,11 @@ export class WebSocketController {
 
     const historyMessages = await DataBaseAPI.getRecentMessages();
 
-    await WebSocketController.broadcastUserStatusChange(username, true, webSocketServer);
+    await WebSocketController.broadcastUserStatusChange(
+      username,
+      true,
+      webSocketServer
+    );
 
     WebSocketController.sendingMessage(clientSocket, 'history', {
       messages: historyMessages,
@@ -95,36 +100,81 @@ export class WebSocketController {
 
       return;
     }
-    if (parsed.type !== 'msg') {
+    if (
+      parsed.type !== 'textMessage' &&
+      parsed.type !== 'audioMessage' &&
+      parsed.type !== 'fileMessage'
+    ) {
       return;
     }
 
-    if (typeof parsed.text !== 'string') return;
-
     const username = userSocketMap.get(clientSocket);
-
     if (!username) return;
 
-    try {
-      const message = await DataBaseAPI.saveMessage(username, parsed.text);
-      const websocketMessage = {
-        id: message._id.toString(),
-        username: message.sender,
-        text: message.text,
-        timestamp: message.timestamp,
-      };
+    if (parsed.type === 'textMessage') {
+      try {
+        const result = await MessageHandlerService.handleTextMessage(
+          parsed,
+          username
+        );
 
-      for (const client of webSocketServer.clients) {
-        if (client.readyState === WebSocket.OPEN) {
-          WebSocketController.sendingMessage(client, 'msg', {
-            ...websocketMessage,
-          });
+        for (const client of webSocketServer.clients) {
+          if (client.readyState === WebSocket.OPEN) {
+            WebSocketController.sendingMessage(client, 'msg', result);
+          }
         }
+      } catch (error) {
+        WebSocketController.sendingMessage(clientSocket, 'error', {
+          message: 'Failed to send text message',
+        });
       }
-    } catch (error) {
-      WebSocketController.sendingMessage(clientSocket, 'error', {
-        message: 'Failed to send message',
-      });
+
+      return;
+    }
+
+    if (parsed.type === 'audioMessage') {
+      try {
+        const result = await MessageHandlerService.handleAudioMessage(
+          parsed,
+          username
+        );
+        for (const client of webSocketServer.clients) {
+          if (client.readyState === WebSocket.OPEN) {
+            WebSocketController.sendingMessage(client, 'msg', result);
+          }
+        }
+      } catch (error) {
+        WebSocketController.sendingMessage(clientSocket, 'error', {
+          message: 'Failed to send audio message',
+        });
+      }
+
+      return;
+    }
+
+    if (parsed.type === 'fileMessage') {
+      try {
+        const result = await MessageHandlerService.handleFileMessage(
+          {
+            fileUrl: parsed.fileUrl,
+            fileName: parsed.fileName,
+            mimeType: parsed.mimeType,
+            size: parsed.size || 0,
+          },
+          username
+        );
+        for (const client of webSocketServer.clients) {
+          if (client.readyState === WebSocket.OPEN) {
+            WebSocketController.sendingMessage(client, 'msg', result);
+          }
+        }
+      } catch (error) {
+        WebSocketController.sendingMessage(clientSocket, 'error', {
+          message: 'Failed to send audio message',
+        });
+      }
+
+      return;
     }
   }
 
