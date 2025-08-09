@@ -4,6 +4,13 @@ export interface BaseMessage {
   timestamp: number;
 }
 
+export interface FileData {
+  data: string;  
+  name: string;  
+  type: string;  
+  size: number;  
+}
+
 export interface TextMessage extends BaseMessage {
   type: 'text';
   text: string;
@@ -11,16 +18,12 @@ export interface TextMessage extends BaseMessage {
 
 export interface AudioMessage extends BaseMessage {
   type: 'audio';
-  audioUrl: string;
-  duration: number;
+  file: FileData;
 }
 
 export interface FileMessage extends BaseMessage {
   type: 'file';
-  fileUrl: string;
-  originalFileName: string;
-  mimeType: string;
-  size: number;
+  file: FileData;
 }
 
 export interface IUser {
@@ -52,11 +55,8 @@ export type ServerMessages =
 export type ClientMessage =
   | { type: 'init'; username: string; id: string }
   | { type: 'textMessage'; text: string }
-  | { type: 'audioMessage'; audioUrl: string; duration: number }
+  | { type: 'audioMessage'; file: FileData }
   | {
       type: 'fileMessage';
-      fileUrl: string;
-      fileName: string;
-      mimeType: string;
-      size?: number;
+      file: FileData;
     };

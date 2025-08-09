@@ -2,7 +2,6 @@ import http from 'http';
 import dotenv from 'dotenv';
 import express from 'express';
 import ClientConnectionService from './services/ClientConnectionService/index';
-import uploadRoutes from './UploadRoutes/index'
 import { DataBaseConnection } from './services/DataBaseConnectionService';
 import { corsMiddleware } from './middlewares/CORS';
 import { WebSocketServer } from 'ws';
@@ -13,9 +12,6 @@ const app = express();
 app.use(corsMiddleware);
 
 app.use(express.json());
-app.use('/uploads', express.static('uploads'));
-
-app.use('/upload', uploadRoutes);
 
 app.get('/test', (_, response) => {
   response.status(200).send('All is good');

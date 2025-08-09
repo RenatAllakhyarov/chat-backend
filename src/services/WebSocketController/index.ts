@@ -1,4 +1,4 @@
-import { MessageHandlerService } from '../../MessageTypeHandlerService';
+import { MessageHandlerService } from '../MessageTypeHandlerService';
 import { ClientMessage, ServerMessages } from '../../types/meta';
 import { userSocketMap } from '../../storage/chatStorage';
 import { RawData, WebSocket, WebSocketServer } from 'ws';
@@ -135,7 +135,7 @@ export class WebSocketController {
     if (parsed.type === 'audioMessage') {
       try {
         const result = await MessageHandlerService.handleAudioMessage(
-          parsed,
+          {file: parsed.file},
           username
         );
         for (const client of webSocketServer.clients) {
@@ -155,12 +155,7 @@ export class WebSocketController {
     if (parsed.type === 'fileMessage') {
       try {
         const result = await MessageHandlerService.handleFileMessage(
-          {
-            fileUrl: parsed.fileUrl,
-            fileName: parsed.fileName,
-            mimeType: parsed.mimeType,
-            size: parsed.size || 0,
-          },
+          {file: parsed.file},
           username
         );
         for (const client of webSocketServer.clients) {

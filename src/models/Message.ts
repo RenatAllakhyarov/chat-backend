@@ -4,14 +4,12 @@ import { Schema, model } from 'mongoose';
 export interface IMessage {
   type: 'text' | 'audio' | 'file';
   sender: string;
-  text?: string;
-  audioUrl?: string;
-  duration?: number;
-  fileUrl?: string;
-  originalFileName?: string;
-  mimeType?: string;
-  size?: number;
   timestamp: number;
+  text?: string;
+  fileData?: Buffer;
+  fileName?: string;
+  mimeType?: string;
+  fileSize?: string;
 }
 
 const messageSchema = new Schema<IMessage>({
@@ -32,19 +30,11 @@ const messageSchema = new Schema<IMessage>({
     type: Number,
     required: true,
   },
-  audioUrl: {
-    type: String,
+  fileData: {
+    type: Buffer,
     required: false,
   },
-  duration: {
-    type: Number,
-    required: false,
-  },
-  originalFileName: {
-    type: String,
-    required: false,
-  },
-  fileUrl: {
+  fileName: {
     type: String,
     required: false,
   },
@@ -52,7 +42,7 @@ const messageSchema = new Schema<IMessage>({
     type: String,
     required: false,
   },
-  size: {
+  fileSize: {
     type: Number,
     required: false,
   },
