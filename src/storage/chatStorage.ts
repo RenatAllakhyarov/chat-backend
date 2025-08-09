@@ -1,7 +1,8 @@
-import { Message } from '../types/meta';
-import { WebSocket } from 'ws';
+import { RawData, WebSocket, WebSocketServer } from 'ws';
+import { WebSocketMessage } from '../types/meta';
+import { TextMessage } from '../types/meta'
 
-export const chatMessages: Message[] = [];
+export const chatMessages: WebSocketMessage[] = [];
 
 export const userSocketMap = new Map<WebSocket, string>();
 

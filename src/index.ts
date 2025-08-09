@@ -11,6 +11,8 @@ dotenv.config();
 const app = express();
 app.use(corsMiddleware);
 
+app.use(express.json());
+
 app.get('/test', (_, response) => {
   response.status(200).send('All is good');
 });
