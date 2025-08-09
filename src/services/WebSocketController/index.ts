@@ -86,7 +86,7 @@ export class WebSocketController {
     });
   }
 
-  public static async handleMessage(
+  public static async handleTextMessage(
     clientSocket: WebSocket,
     webSocketServer: WebSocketServer,
     parsed: ClientMessage
@@ -101,9 +101,7 @@ export class WebSocketController {
       return;
     }
     if (
-      parsed.type !== 'textMessage' &&
-      parsed.type !== 'audioMessage' &&
-      parsed.type !== 'fileMessage'
+      parsed.type !== 'textMessage'
     ) {
       return;
     }
@@ -131,6 +129,30 @@ export class WebSocketController {
 
       return;
     }
+  }
+
+  public static async handleAudioMessage(
+    clientSocket: WebSocket,
+    webSocketServer: WebSocketServer,
+    parsed: ClientMessage
+  ) {
+    if (!dataBaseConnection.getIsDbConnected()) {
+      WebSocketController.sendingMessage(clientSocket, 'error', {
+        message: 'Database is unavailable',
+      });
+
+      clientSocket.close(1000, 'DB connection failed');
+
+      return;
+    }
+    if (
+      parsed.type !== 'audioMessage' 
+    ) {
+      return;
+    }
+
+    const username = userSocketMap.get(clientSocket);
+    if (!username) return;
 
     if (parsed.type === 'audioMessage') {
       try {
@@ -151,6 +173,30 @@ export class WebSocketController {
 
       return;
     }
+  }
+
+  public static async handleFileMessage(
+    clientSocket: WebSocket,
+    webSocketServer: WebSocketServer,
+    parsed: ClientMessage
+  ) {
+    if (!dataBaseConnection.getIsDbConnected()) {
+      WebSocketController.sendingMessage(clientSocket, 'error', {
+        message: 'Database is unavailable',
+      });
+
+      clientSocket.close(1000, 'DB connection failed');
+
+      return;
+    }
+    if (
+      parsed.type !== 'fileMessage'
+    ) {
+      return;
+    }
+
+    const username = userSocketMap.get(clientSocket);
+    if (!username) return;
 
     if (parsed.type === 'fileMessage') {
       try {
@@ -165,10 +211,9 @@ export class WebSocketController {
         }
       } catch (error) {
         WebSocketController.sendingMessage(clientSocket, 'error', {
-          message: 'Failed to send audio message',
+          message: 'Failed to send file message',
         });
       }
-
       return;
     }
   }
@@ -275,6 +320,8 @@ export class WebSocketController {
     ) => Promise<void>
   > = {
     init: this.handleInit,
-    msg: this.handleMessage,
+    textMessage: this.handleTextMessage,
+    audioMessage: this.handleAudioMessage,
+    fileMessage: this.handleFileMessage
   };
 }
