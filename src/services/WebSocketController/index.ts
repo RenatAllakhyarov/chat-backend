@@ -320,8 +320,8 @@ export class WebSocketController {
     ) => Promise<void>
   > = {
     init: this.handleInit,
-    text: this.handleTextMessage,
-    audio: this.handleAudioMessage,
-    file: this.handleFileMessage
+    textMessage: this.handleTextMessage,
+    audioMessage: this.handleAudioMessage,
+    fileMessage: this.handleFileMessage
   };
 }
