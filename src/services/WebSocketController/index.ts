@@ -118,7 +118,7 @@ export class WebSocketController {
 
         for (const client of webSocketServer.clients) {
           if (client.readyState === WebSocket.OPEN) {
-            WebSocketController.sendingMessage(client, 'msg', result);
+            WebSocketController.sendingMessage(client, 'msg', {message: result});
           }
         }
       } catch (error) {
@@ -162,7 +162,7 @@ export class WebSocketController {
         );
         for (const client of webSocketServer.clients) {
           if (client.readyState === WebSocket.OPEN) {
-            WebSocketController.sendingMessage(client, 'msg', result);
+            WebSocketController.sendingMessage(client, 'msg', {message: result});
           }
         }
       } catch (error) {
@@ -206,7 +206,7 @@ export class WebSocketController {
         );
         for (const client of webSocketServer.clients) {
           if (client.readyState === WebSocket.OPEN) {
-            WebSocketController.sendingMessage(client, 'msg', result);
+            WebSocketController.sendingMessage(client, 'msg', {message: result});
           }
         }
       } catch (error) {

@@ -6,10 +6,10 @@ export interface IMessage {
   sender: string;
   timestamp: number;
   text?: string;
-  fileData?: Buffer;
+  fileData?: string;
   fileName?: string;
   mimeType?: string;
-  fileSize?: string;
+  fileSize?: number;
 }
 
 const messageSchema = new Schema<IMessage>({
@@ -31,7 +31,7 @@ const messageSchema = new Schema<IMessage>({
     required: true,
   },
   fileData: {
-    type: Buffer,
+    type: String,
     required: false,
   },
   fileName: {

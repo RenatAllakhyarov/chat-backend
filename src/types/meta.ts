@@ -1,6 +1,6 @@
 export interface BaseMessage {
   id: string;
-  username: string;
+  sender: string;
   timestamp: number;
 }
 
@@ -18,12 +18,18 @@ export interface TextMessage extends BaseMessage {
 
 export interface AudioMessage extends BaseMessage {
   type: 'audio';
-  file: FileData;
+  fileData: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
 }
 
 export interface FileMessage extends BaseMessage {
   type: 'file';
-  file: FileData;
+  fileData: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
 }
 
 export interface IUser {
