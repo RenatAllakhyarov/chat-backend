@@ -1,17 +1,24 @@
-import { Message } from '../../models/Message';
+import { IMessage, Message } from '../../models/Message';
 import { IUser } from '../../types/meta';
 import { User } from '../../models/User';
 
 export class DataBaseAPI {
-  public static async getRecentMessages(limit: number = 50) {
+  public static async getRecentMessages(
+    limit: number = 50
+  ): Promise<IMessage[]> {
     const dbMessages = await Message.find()
       .sort({ timestamp: -1 })
       .limit(limit);
     const websocketMessages = dbMessages.map((dbMessage) => ({
       id: dbMessage._id.toString(),
-      username: dbMessage.sender,
-      text: dbMessage.text,
+      type: dbMessage.type,
+      sender: dbMessage.sender,
       timestamp: dbMessage.timestamp,
+      text: dbMessage.text,
+      fileData: dbMessage.fileData,
+      fileName: dbMessage.fileName,
+      mimeType: dbMessage.mimeType,
+      fileSize: dbMessage.fileSize,
     }));
     return websocketMessages;
   }
