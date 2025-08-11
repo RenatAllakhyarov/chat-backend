@@ -9,36 +9,36 @@ import { Message } from '../../models/Message';
 
 export class MessageHandlerService {
   public static async handleTextMessage(
-    parsed: { text: string },
+    text: string,
     username: string
   ): Promise<TWebSocketMessage> {
-    
-    MessageValidatorService.validateTextContent(parsed.text);
+
+    MessageValidatorService.validateTextContent(text);
 
     const savedMessage = await DataBaseAPI.saveTextMessage(
       username,
-      parsed.text
+      text
     );
 
     return {
       type: MessageFileTypes.TEXT,
       id: savedMessage._id.toString(),
       sender: username,
-      text: parsed.text,
+      text: text,
       timestamp: savedMessage.timestamp,
     };
   }
 
   public static async handleFileMessage(
-    parsed: { file: IFileData },
+    file: IFileData,
     username: string
   ): Promise<TWebSocketMessage> {
 
-    MessageValidatorService.validateFileContent(parsed.file);
+    MessageValidatorService.validateFileContent(file);
 
     const savedMessage = await DataBaseAPI.saveFileMessage(
       username,
-      parsed.file
+      file
     );
 
     const webSocketMessage: TWebSocketMessage = {

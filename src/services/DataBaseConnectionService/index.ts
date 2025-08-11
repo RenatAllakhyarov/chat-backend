@@ -16,6 +16,7 @@ export class DataBaseConnection {
       }
 
       await mongoose.connect(dbUrl);
+      
       this.isDbConnected = true;
     } catch (err) {
       console.error('Error connecting to MongoDB:', err);

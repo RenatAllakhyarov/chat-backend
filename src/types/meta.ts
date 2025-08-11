@@ -6,15 +6,15 @@ export interface IBaseMessage {
   timestamp: number;
 }
 
-export const enum MessageFileTypes {
+export enum MessageFileTypes {
   TEXT = 'text',
   FILE = 'file',
   INIT = 'init',
   MESSAGE = 'msg',
   HISTORY = 'history',
   ERROR = 'error',
-  USERDATA = 'userData',
-  USERSTATUSCHANGED = 'userStatusChanged'
+  USER_DATA = 'userData',
+  USER_STATUS_CHANGED = 'userStatusChanged'
 }
 
 export interface IFileData {
@@ -65,10 +65,9 @@ export type TServerMessages =
   | { type: MessageFileTypes.HISTORY; messages: TWebSocketMessage[] }
   | { type: MessageFileTypes.ERROR; message: string }
   | { type: MessageFileTypes.MESSAGE; message: TWebSocketMessage }
-  | { type: MessageFileTypes.USERDATA; users: IUser[] }
+  | { type: MessageFileTypes.USER_DATA; users: IUser[] }
   | { 
-      type: MessageFileTypes.USERSTATUSCHANGED; 
-      username: string; 
+      type: MessageFileTypes.USER_STATUS_CHANGED; 
       id: string; 
       isOnline: boolean 
     };

@@ -10,49 +10,22 @@ class ClientConnectionService {
   ) {
     clientSocket.on('message', async (raw) => {
       const parsed = WebSocketController.parseClientMessage(raw, clientSocket);
+
       if (!parsed) return;
 
       try {
-        switch (parsed.type) {
-          case MessageFileTypes.INIT:
-            await WebSocketController.handleInit(
-              clientSocket,
-              webSocketServer,
-              parsed
-            );
-            break;
-
-          case MessageFileTypes.TEXT:
-            await WebSocketController.handleTextMessage(
-              clientSocket,
-              webSocketServer,
-              parsed
-            );
-            break;
-
-          case MessageFileTypes.FILE:
-            await WebSocketController.handleFileMessage(
-              clientSocket,
-              webSocketServer,
-              parsed
-            );
-            break;
-
-          default:
-            const unexpectedType: never = parsed;
-            throw new Error(`Unexpected message type: ${unexpectedType}`);
-        }
-      } catch (error) {
-        WebSocketController.sendingMessage(
+        await WebSocketController.handleIncomingMessage(
           clientSocket,
-          MessageFileTypes.ERROR,
-          {
-            message:
-              error instanceof Error ? error.message : 'Processing failed',
-          }
+          webSocketServer,
+          parsed
         );
+      } catch (error) {
+        WebSocketController.sendingMessage(clientSocket, MessageFileTypes.ERROR, {
+          message: error instanceof Error ? error.message : 'Processing failed'
+        });
       }
     });
+
 
     clientSocket.on('close', () => {
       WebSocketController.handleUserDisconnect(clientSocket, webSocketServer);
@@ -61,7 +34,7 @@ class ClientConnectionService {
     clientSocket.on('error', (err) => {
       console.error('WebSocket error:', err);
       WebSocketController.sendingMessage(clientSocket, MessageFileTypes.ERROR, {
-        message: 'Connection error',
+        message: 'Connection error'
       });
     });
   }

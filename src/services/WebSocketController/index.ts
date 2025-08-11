@@ -1,5 +1,12 @@
 import { MessageHandlerService } from '../MessageTypeHandlerService';
-import { IFileData, TClientMessage, TServerMessages, MessageFileTypes, TInitMessage, TFileMessageClient, TTextMessageClient} from '../../types/meta';
+import { 
+  TClientMessage,
+  TServerMessages, 
+  MessageFileTypes, 
+  TInitMessage, 
+  TFileMessageClient, 
+  TTextMessageClient, 
+  TMessageHandler} from '../../types/meta';
 import { userSocketMap } from '../../storage/chatStorage';
 import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { DataBaseAPI } from '../DataBaseAPI/index';
@@ -80,15 +87,15 @@ export class WebSocketController {
 
     console.log('User online set successfully');
 
-    await WebSocketController.sendAllUsers(clientSocket);
-
-    const historyMessages = await DataBaseAPI.getRecentMessages();
-
     await WebSocketController.broadcastUserStatusChange(
       username,
       true,
       webSocketServer
     );
+
+    await WebSocketController.sendAllUsers(clientSocket);
+
+    const historyMessages = await DataBaseAPI.getRecentMessages();
 
     WebSocketController.sendingMessage(clientSocket, MessageFileTypes.HISTORY, {
       messages: historyMessages,
@@ -105,18 +112,15 @@ export class WebSocketController {
 
   try {
     const result = await MessageHandlerService.handleTextMessage(
-      {text: parsed.text},
+      parsed.text,
        username
       );
     
-    webSocketServer.clients.forEach(client => {
-      if (client.readyState === WebSocket.OPEN) {
-        WebSocketController.sendingMessage(client, 'msg', result);
-      }
-    });
+    WebSocketController.sendMessageToAllClients(webSocketServer, MessageFileTypes.MESSAGE, result)
+
   } catch (error) {
     console.error('Text message error:', error);
-    clientSocket.close(1000, 'Processing failed');
+    throw new Error( 'Proccesing failed' );
   }
 }
 
@@ -131,7 +135,7 @@ export class WebSocketController {
 
   try {
     const result = await MessageHandlerService.handleFileMessage(
-      { file: parsed.file },
+      parsed.file,
       username
     );
     
@@ -182,7 +186,7 @@ export class WebSocketController {
       const allUsersWithStatus = await DataBaseAPI.getAllUsersData();
 
       const message: TServerMessages = {
-        type: MessageFileTypes.USERDATA,
+        type: MessageFileTypes.USER_DATA,
         users: allUsersWithStatus,
       };
 
@@ -199,7 +203,7 @@ export class WebSocketController {
       const allUsersWithStatus = await DataBaseAPI.getAllUsersData();
 
       const message: TServerMessages = {
-        type: MessageFileTypes.USERDATA,
+        type: MessageFileTypes.USER_DATA,
         users: allUsersWithStatus,
       };
 
@@ -223,8 +227,7 @@ export class WebSocketController {
       }
 
       const message: TServerMessages = {
-        username: username,
-        type: MessageFileTypes.USERSTATUSCHANGED,
+        type: MessageFileTypes.USER_STATUS_CHANGED,
         id: user._id.toString(),
         isOnline: isOnline,
       };
@@ -240,23 +243,55 @@ export class WebSocketController {
     }
   }
 
-  public static messageHandlers: {
-  [MessageFileTypes.INIT]: (
+  public static async handleIncomingMessage (
     clientSocket: WebSocket,
     webSocketServer: WebSocketServer,
-    parsed: TInitMessage 
-  ) => Promise<void>;
-  [MessageFileTypes.TEXT]: (
-    clientSocket: WebSocket,
-    webSocketServer: WebSocketServer, 
-    parsed: TTextMessageClient
-  ) => Promise<void>;
-  [MessageFileTypes.FILE]: (
-    clientSocket: WebSocket,
-    webSocketServer: WebSocketServer,
-    parsed: TFileMessageClient
-  ) => Promise<void>;
-} = {
+    parsed: TClientMessage
+  ): Promise<void> {
+    switch (parsed.type) {
+      case MessageFileTypes.INIT:
+      await WebSocketController.handleInit(
+          clientSocket,
+          webSocketServer,
+          parsed 
+          );
+      break;
+            
+      case MessageFileTypes.TEXT:
+      await WebSocketController.handleTextMessage(
+          clientSocket,
+          webSocketServer,
+          parsed 
+          );
+      break;
+            
+      case MessageFileTypes.FILE:
+        await WebSocketController.handleFileMessage(
+          clientSocket,
+          webSocketServer,
+          parsed 
+          );
+          break;
+            
+          default:
+            const unexpectedType: never = parsed;
+            throw new Error(`Unexpected message type: ${unexpectedType}`);
+        }
+  }
+
+  private static sendMessageToAllClients(
+  webSocketServer: WebSocketServer,
+  type: MessageFileTypes,
+  message: any
+) {
+  webSocketServer.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      WebSocketController.sendingMessage(client, type, message);
+    }
+  });
+}
+
+  public static messageHandlers:TMessageHandler = {
   [MessageFileTypes.INIT]: this.handleInit.bind(this),
   [MessageFileTypes.TEXT]: this.handleTextMessage.bind(this),
   [MessageFileTypes.FILE]: this.handleFileMessage.bind(this)
