@@ -1,167 +1,55 @@
-import { FileData, WebSocketMessage } from '../../types/meta';
+import {
+  IFileData,
+  MessageFileTypes,
+  TWebSocketMessage,
+} from '../../types/meta';
+import { DataBaseAPI } from '../DataBaseAPI';
+import { MessageValidatorService } from '../MessageValidators';
 import { Message } from '../../models/Message';
 
 export class MessageHandlerService {
   public static async handleTextMessage(
     parsed: { text: string },
     username: string
-  ): Promise<WebSocketMessage> {
-    const { text } = parsed;
+  ): Promise<TWebSocketMessage> {
+    
+    MessageValidatorService.validateTextContent(parsed.text);
 
-    if (!parsed.text || parsed.text.trim().length === 0) {
-      throw new Error('Text message cannot be empty');
-    }
+    const savedMessage = await DataBaseAPI.saveTextMessage(
+      username,
+      parsed.text
+    );
 
-    const message = new Message({
-      type: 'text',
+    return {
+      type: MessageFileTypes.TEXT,
+      id: savedMessage._id.toString(),
       sender: username,
       text: parsed.text,
-      timestamp: Date.now(),
-    });
-
-    await message.save();
-
-    const webSocketMessage: WebSocketMessage = {
-      type: 'text',
-      id: message._id.toString(),
-      sender: username,
-      text: parsed.text,
-      timestamp: message.timestamp,
+      timestamp: savedMessage.timestamp,
     };
-
-    return webSocketMessage;
-  }
-
-  public static async handleAudioMessage(
-    parsed: { file: FileData },
-    username: string
-  ): Promise<WebSocketMessage> {
-    const { file } = parsed;
-
-    if (!file) {
-      throw new Error('File data is required');
-    }
-
-    if (!file.data || typeof file.data !== 'string') {
-      throw new Error('Invalid file data');
-    }
-
-    if (!file.name || file.name.trim().length === 0) {
-      throw new Error('File name is required');
-    }
-
-    if (file.size === undefined || file.size < 0) {
-      throw new Error('Invalid file size');
-    }
-
-    if (file.size > 20 * 1024 * 1024) {
-      throw new Error('File size must not exceed 20MB');
-    }
-
-    if (!file.type || file.type.trim().length === 0) {
-      throw new Error('File type is required');
-    }
-
-    const allowedAudioTypes = [
-      'audio/mpeg',
-      'audio/wav',
-      'audio/ogg',
-      'audio/mp4',
-    ];
-    if (!allowedAudioTypes.includes(file.type)) {
-      throw new Error('Unsupported audio file type');
-    }
-
-    const message = new Message({
-      type: 'audio',
-      sender: username,
-      fileData: file.data,
-      fileName: file.name,
-      mimeType: file.type,
-      fileSize: file.size,
-      timestamp: Date.now(),
-    });
-
-    await message.save();
-
-    const webSocketMessage: WebSocketMessage = {
-      type: 'audio',
-      id: message._id.toString(),
-      sender: username,
-      fileData: message.fileData!,
-      fileName: message.fileName!,
-      fileSize: message.fileSize!,
-      mimeType: message.mimeType!,
-      timestamp: message.timestamp,
-    };
-
-    return webSocketMessage;
   }
 
   public static async handleFileMessage(
-    parsed: { file: FileData },
+    parsed: { file: IFileData },
     username: string
-  ): Promise<WebSocketMessage> {
-    const { file } = parsed;
+  ): Promise<TWebSocketMessage> {
 
-    if (!file) {
-      throw new Error('File data is required');
-    }
+    MessageValidatorService.validateFileContent(parsed.file);
 
-    if (!file.data || typeof file.data !== 'string') {
-      throw new Error('Invalid file data');
-    }
+    const savedMessage = await DataBaseAPI.saveFileMessage(
+      username,
+      parsed.file
+    );
 
-    if (!file.name || file.name.trim().length === 0) {
-      throw new Error('File name is required');
-    }
-
-    if (file.size === undefined || file.size < 0) {
-      throw new Error('Invalid file size');
-    }
-
-    if (file.size > 20 * 1024 * 1024) {
-      throw new Error('File size must not exceed 20MB');
-    }
-
-    if (!file.type || file.type.trim().length === 0) {
-      throw new Error('File type is required');
-    }
-
-    const allowedFileTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'application/pdf',
-      'text/plain',
-      'audio/mpeg',
-      'audio/wav',
-    ];
-    if (!allowedFileTypes.includes(file.type)) {
-      throw new Error('Unsupported audio file type');
-    }
-
-    const message = new Message({
-      type: 'file',
+    const webSocketMessage: TWebSocketMessage = {
+      type: MessageFileTypes.FILE,
+      id: savedMessage._id.toString(),
       sender: username,
-      fileData: file.data,
-      fileName: file.name,
-      mimeType: file.type,
-      fileSize: file.size,
-      timestamp: Date.now(),
-    });
-
-    await message.save();
-
-    const webSocketMessage: WebSocketMessage = {
-      type: 'file',
-      id: message._id.toString(),
-      sender: username,
-      fileData: message.fileData!,
-      fileName: message.fileName!,
-      fileSize: message.fileSize!,
-      mimeType: message.mimeType!,
-      timestamp: message.timestamp,
+      fileData: savedMessage.fileData!,
+      fileName: savedMessage.fileName!,
+      fileSize: savedMessage.fileSize!,
+      mimeType: savedMessage.mimeType!,
+      timestamp: savedMessage.timestamp,
     };
 
     return webSocketMessage;
