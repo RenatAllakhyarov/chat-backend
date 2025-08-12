@@ -3,9 +3,8 @@ import {
   MessageFileTypes,
   TWebSocketMessage,
 } from '../../types/meta';
-import { DataBaseAPI } from '../DataBaseAPI';
 import { MessageValidatorService } from '../MessageValidators';
-import { Message } from '../../models/Message';
+import { DataBaseAPI } from '../DataBaseAPI';
 
 export class MessageHandlerService {
   public static async handleTextMessage(
@@ -14,7 +13,7 @@ export class MessageHandlerService {
   ): Promise<TWebSocketMessage> {
 
     MessageValidatorService.validateTextContent(text);
-
+    try {
     const savedMessage = await DataBaseAPI.saveTextMessage(
       username,
       text
@@ -27,6 +26,10 @@ export class MessageHandlerService {
       text: text,
       timestamp: savedMessage.timestamp,
     };
+  } catch (error) {
+    console.error(" Database error in saveTextMessage: ", error);
+    throw new Error(' Server unexpected error');
+  }
   }
 
   public static async handleFileMessage(
@@ -35,7 +38,7 @@ export class MessageHandlerService {
   ): Promise<TWebSocketMessage> {
 
     MessageValidatorService.validateFileContent(file);
-
+    try{
     const savedMessage = await DataBaseAPI.saveFileMessage(
       username,
       file
@@ -53,5 +56,9 @@ export class MessageHandlerService {
     };
 
     return webSocketMessage;
+  } catch (error) {
+    console.error("Database error in saveFileMessage", error);
+    throw new Error ('Server unexpected error');
+  }
   }
 }

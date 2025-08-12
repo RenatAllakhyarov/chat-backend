@@ -21,7 +21,7 @@ class ClientConnectionService {
         );
       } catch (error) {
         WebSocketController.sendingMessage(clientSocket, MessageFileTypes.ERROR, {
-          message: error instanceof Error ? error.message : 'Processing failed'
+          message: error instanceof Error ? error.message : 'Server unexpected error'
         });
       }
     });

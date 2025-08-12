@@ -1,4 +1,3 @@
-import { MessageHandlerService } from '../MessageTypeHandlerService';
 import { 
   TClientMessage,
   TServerMessages, 
@@ -7,6 +6,7 @@ import {
   TFileMessageClient, 
   TTextMessageClient, 
   TMessageHandler} from '../../types/meta';
+import { MessageHandlerService } from '../MessageTypeHandlerService';
 import { userSocketMap } from '../../storage/chatStorage';
 import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { DataBaseAPI } from '../DataBaseAPI/index';
@@ -63,7 +63,7 @@ export class WebSocketController {
     webSocketServer: WebSocketServer,
     parsed: TInitMessage
   ): Promise<void> => {
-
+    try{
     if (!dataBaseConnection.getIsDbConnected()) {
       WebSocketController.sendingMessage(clientSocket, 'error', {
         message: 'Database is unavailable',
@@ -95,11 +95,20 @@ export class WebSocketController {
 
     await WebSocketController.sendAllUsers(clientSocket);
 
-    const historyMessages = await DataBaseAPI.getRecentMessages();
+    await WebSocketController.sendHistory(clientSocket);
+  } catch (error){
 
-    WebSocketController.sendingMessage(clientSocket, MessageFileTypes.HISTORY, {
-      messages: historyMessages,
-    });
+    console.error('Error in handleInit', error);
+
+    WebSocketController.sendingMessage(
+    clientSocket, 
+    MessageFileTypes.ERROR,
+    {message: 'Server unexpected error during initialization'}
+  );
+
+  clientSocket.close(1000, 'Initialization failed');
+
+  }
   }
 
   public static handleTextMessage = async(
@@ -108,6 +117,7 @@ export class WebSocketController {
   parsed: TTextMessageClient
 ): Promise<void> => {
   const username = userSocketMap.get(clientSocket);
+
   if (!username) return;
 
   try {
@@ -116,11 +126,16 @@ export class WebSocketController {
        username
       );
     
-    WebSocketController.sendMessageToAllClients(webSocketServer, MessageFileTypes.MESSAGE, result)
+    WebSocketController.sendMessageToAllClients(webSocketServer, MessageFileTypes.MESSAGE, result);
 
   } catch (error) {
-    console.error('Text message error:', error);
-    throw new Error( 'Proccesing failed' );
+    console.error('Error in handleTextMessage', error);
+
+    WebSocketController.sendingMessage(
+      clientSocket,
+      MessageFileTypes.ERROR,
+      {message: 'Failed to send text message'}
+    )
   }
 }
 
@@ -139,15 +154,17 @@ export class WebSocketController {
       username
     );
     
-    for (const client of webSocketServer.clients) {
-      if (client.readyState === WebSocket.OPEN) {
-        WebSocketController.sendingMessage(client, MessageFileTypes.MESSAGE, result);
-      }
-    }
+    WebSocketController.sendMessageToAllClients(webSocketServer,MessageFileTypes.FILE, result);
+
   } catch (error) {
-    WebSocketController.sendingMessage(clientSocket, MessageFileTypes.ERROR, {
-      message: 'Failed to send file message',
-    });
+
+    console.error('Error in handleFileMessage', error);
+
+    WebSocketController.sendingMessage(
+      clientSocket, 
+      MessageFileTypes.ERROR, 
+      {message: 'Failed to send file message',}
+    );
   }
 }
 
@@ -177,7 +194,14 @@ export class WebSocketController {
 
       await this.broadcastAllUsers(webSocketServer);
     } catch (error) {
+
       console.error(`Failed to set user offline`, error);
+
+      WebSocketController.sendingMessage(
+        clientSocket,
+         MessageFileTypes.ERROR, 
+        {message: 'Server unexpected error while setting user offline'}
+      );
     }
   }
 
@@ -190,11 +214,16 @@ export class WebSocketController {
         users: allUsersWithStatus,
       };
 
-      for (const client of websocketServer.clients) {
-        WebSocketController.sendingMessage(client, 'userStatus', message);
-      }
+      WebSocketController.sendMessageToAllClients(websocketServer, MessageFileTypes.USER_DATA, message);
+
     } catch (error) {
       console.error(`Failed to send list of all users with status`, error);
+      
+      WebSocketController.sendMessageToAllClients(
+        websocketServer,
+        MessageFileTypes.ERROR,
+        {message: 'Server error while updating users list'}
+      );
     }
   }
 
@@ -210,6 +239,12 @@ export class WebSocketController {
       WebSocketController.sendingMessage(clientSocket, 'userStatus', message);
     } catch (error) {
       console.error(`Failed to send full user status`, error);
+
+      WebSocketController.sendingMessage(
+        clientSocket,
+        MessageFileTypes.ERROR,
+        {message: 'Server unexpected error while sending users statuses'}
+      );
     }
   }
 
@@ -232,14 +267,16 @@ export class WebSocketController {
         isOnline: isOnline,
       };
 
-      for (const clients of webSocketServer.clients) {
-        if (clients.readyState !== WebSocket.OPEN) {
-          continue;
-        }
-        WebSocketController.sendingMessage(clients, 'userStatus', message);
-      }
+      WebSocketController.sendMessageToAllClients(webSocketServer, MessageFileTypes.USER_DATA, message);
+
     } catch (error) {
       console.error(`Failed to Change user status ${username}`, error);
+
+      WebSocketController.sendMessageToAllClients(
+        webSocketServer,
+        MessageFileTypes.ERROR,
+        {message: 'Server unexpected error while changing status'}
+      );
     }
   }
 
@@ -248,6 +285,7 @@ export class WebSocketController {
     webSocketServer: WebSocketServer,
     parsed: TClientMessage
   ): Promise<void> {
+    try{
     switch (parsed.type) {
       case MessageFileTypes.INIT:
       await WebSocketController.handleInit(
@@ -277,6 +315,15 @@ export class WebSocketController {
             const unexpectedType: never = parsed;
             throw new Error(`Unexpected message type: ${unexpectedType}`);
         }
+      } catch(error){
+        console.error('Error in handleIncomingMessage', error);
+
+        WebSocketController.sendingMessage(
+          clientSocket,
+          MessageFileTypes.ERROR,
+          {message: 'Server unexpected error during message processing'}
+        );
+      }
   }
 
   private static sendMessageToAllClients(
@@ -284,16 +331,46 @@ export class WebSocketController {
   type: MessageFileTypes,
   message: any
 ) {
+  try{
   webSocketServer.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       WebSocketController.sendingMessage(client, type, message);
     }
   });
+} catch(error){
+  console.error ('Error in sendMessageToAllClients', error);
+
+  WebSocketController.sendMessageToAllClients(
+    webSocketServer,
+    MessageFileTypes.ERROR,
+    {message: 'Server unexpected error while sending message to all clients'}
+  );
+}
+}
+
+private static async sendHistory(clientSocket: WebSocket){
+try{
+  const historyMessages = await DataBaseAPI.getRecentMessages();
+
+  WebSocketController.sendingMessage(
+    clientSocket,
+    MessageFileTypes.HISTORY,
+    {messages: historyMessages}
+  );
+} catch(error){
+  console.error('Error in sendingHistory', error);
+
+  WebSocketController.sendingMessage(
+    clientSocket,
+    MessageFileTypes.ERROR,
+    {message: 'Server unexpected error while sending message to all clients'}
+  );
+}
 }
 
   public static messageHandlers:TMessageHandler = {
-  [MessageFileTypes.INIT]: this.handleInit.bind(this),
-  [MessageFileTypes.TEXT]: this.handleTextMessage.bind(this),
-  [MessageFileTypes.FILE]: this.handleFileMessage.bind(this)
+  [MessageFileTypes.INIT]: this.handleInit,
+  [MessageFileTypes.TEXT]: this.handleTextMessage,
+  [MessageFileTypes.FILE]: this.handleFileMessage
 };
 }
