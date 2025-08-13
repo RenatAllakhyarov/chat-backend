@@ -2,7 +2,7 @@ import { MessageFileTypes } from '../types/meta';
 import { Schema, model } from 'mongoose';
 
 export interface IMessage {
-  type: 'text' | 'audio' | 'file';
+  type: MessageFileTypes.TEXT | MessageFileTypes.FILE;
   sender: string;
   timestamp: number;
   text?: string;

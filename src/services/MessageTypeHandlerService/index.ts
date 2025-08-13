@@ -1,10 +1,10 @@
+import { MessageValidatorService } from '../MessageValidators';
+import { DataBaseAPI } from '../DataBaseAPI';
 import {
   IFileData,
   MessageFileTypes,
   TWebSocketMessage,
 } from '../../types/meta';
-import { MessageValidatorService } from '../MessageValidators';
-import { DataBaseAPI } from '../DataBaseAPI';
 
 export class MessageHandlerService {
   public static async handleTextMessage(

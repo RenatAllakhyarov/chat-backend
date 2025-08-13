@@ -1,9 +1,4 @@
-import {
-  IFileData,
-  TClientMessage,
-  TWebSocketMessage,
-  MessageFileTypes,
-} from '../../types/meta';
+import { IFileData } from '../../types/meta';
 
 export class MessageValidatorService {
   public static isValidFileData(file: unknown): file is IFileData {
@@ -34,7 +29,7 @@ export class MessageValidatorService {
   }
 
   public static validateFileContent(file: IFileData): void {
-    
+
     if (!this.isValidFileData(file)) {
       throw new Error('Invalid file data');
     }
