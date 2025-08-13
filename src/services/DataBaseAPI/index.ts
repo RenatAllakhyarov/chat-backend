@@ -76,7 +76,7 @@ export class DataBaseAPI {
 
   public static async setUserOnline(username: string): Promise<void> {
     console.log('Setting user online in DB:', username);
-    
+
     try {
       const user = await User.findOneAndUpdate(
         { username },

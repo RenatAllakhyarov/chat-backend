@@ -20,12 +20,18 @@ class ClientConnectionService {
           parsed
         );
       } catch (error) {
-        WebSocketController.sendingMessage(clientSocket, MessageFileTypes.ERROR, {
-          message: error instanceof Error ? error.message : 'Server unexpected error'
-        });
+        WebSocketController.sendingMessage(
+          clientSocket,
+          MessageFileTypes.ERROR,
+          {
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Server unexpected error',
+          }
+        );
       }
     });
-
 
     clientSocket.on('close', () => {
       WebSocketController.handleUserDisconnect(clientSocket, webSocketServer);
@@ -34,7 +40,7 @@ class ClientConnectionService {
     clientSocket.on('error', (err) => {
       console.error('WebSocket error:', err);
       WebSocketController.sendingMessage(clientSocket, MessageFileTypes.ERROR, {
-        message: 'Connection error'
+        message: 'Connection error',
       });
     });
   }

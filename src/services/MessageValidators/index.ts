@@ -2,7 +2,6 @@ import { IFileData } from '../../types/meta';
 
 export class MessageValidatorService {
   public static isValidFileData(file: unknown): file is IFileData {
-
     if (!file || typeof file !== 'object') return false;
 
     const fileData = file as IFileData;
@@ -18,7 +17,6 @@ export class MessageValidatorService {
   }
 
   public static validateTextContent(text: string): void {
-
     if (!text || text.trim().length === 0) {
       throw new Error('Text message cannot be empty');
     }
@@ -29,7 +27,6 @@ export class MessageValidatorService {
   }
 
   public static validateFileContent(file: IFileData): void {
-
     if (!this.isValidFileData(file)) {
       throw new Error('Invalid file data');
     }
