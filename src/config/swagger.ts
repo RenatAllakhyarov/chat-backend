@@ -6,16 +6,15 @@ export const swaggerOptions: Options = {
     info: {
       title: 'Chat Backend API',
       version: '1.0.0',
-      description: 'Real-time chat application backend API with WebSocket support'
+      description:
+        'Real-time chat application backend API with WebSocket support',
     },
     servers: [
       {
         url: 'http://localhost:{$PORT}',
-        description: 'WebSocketServer'
-      }
+        description: 'WebSocketServer',
+      },
     ],
   },
-  apis: [
-  './src/documents/webSocketDocs.ts'
-]
+  apis: ['./src/documents/webSocketDocs.ts'],
 };
