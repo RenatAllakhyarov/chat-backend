@@ -178,8 +178,6 @@ components:
         type:
           type: string
           enum: [error]
-        code:
-          type: string
         message:
           type: string
       required: [type, code, message]
