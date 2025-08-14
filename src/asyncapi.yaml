@@ -128,45 +128,54 @@ components:
         text: Hello everyone!
     
     FileMessage:
-      type: object
-      properties:
-        type:
-          type: string
-          enum: [file]
-        file:
-          type: object
-          properties:
-            name:
-              type: string
-            type:
-              type: string
-            size:
-              type: integer
-              minimum: 1
-            data:
-              type: string
-              format: byte
-          required: [name, type, size, data]
-      required: [type, file]
-      example:
-        type: file
-        file:
-          name: document.pdf
-          type: application/pdf
-          size: 24576
-          data: base64encodedstring
+        type: object
+        properties:
+          type:
+            type: string
+            enum: [file]
+          id:
+            type: string
+          sender:
+            type: string
+          timestamp:
+            type: integer
+          fileData:
+            type: string
+            format: byte
+          fileName:
+            type: string
+          mimeType:
+            type: string
+          fileSize:
+            type: integer
+            minimum: 1
+        required: [type, id, sender, timestamp, fileData, fileName, mimeType, fileSize]
+        example:
+          type: file
+          id: "msg-12345"
+          sender: "user-67890"
+          timestamp: 1620000000
+          fileData: "JVBERi0xLjYKJdDUxdgKNSAwIG9iago8PAovTGVuZ3RoID..."
+          fileName: "document.pdf"
+          mimeType: "application/pdf"
+          fileSize: 24576
     
     ServerMessage:
       type: object
       properties:
         type:
           type: string
-          enum: [message]
+          enum: [msg]
         id:
           type: string
         sender:
           type: string
         content:
+          oneOf:
+            - $ref: '#/components/schemas/HistoryMessage' 
+            - $ref: '#/components/schemas/ErrorMessage' 
+            - $ref: '#/components/schemas/UserDataMessage' 
+            - $ref: '#/components/schemas/UserStatusMessage' 
           type: string
         timestamp:
           type: integer
