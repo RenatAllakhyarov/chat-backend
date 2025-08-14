@@ -10,22 +10,11 @@ info:
     2. Sends INIT message with username
     3. Receives initial data (users list, history)
     4. Exchanges real-time messages
-  contact:
-    name: API Team
-    email: support@example.com
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-
 servers:
   development:
-    url: ws://localhost:3001
+    url: ws://localhost:{$PORT}
     protocol: ws
-    description: Development server
-  production:
-    url: wss://api.example.com/chat
-    protocol: wss
-    description: Production server
+    description: WebSocket server
 
 channels:
   /:

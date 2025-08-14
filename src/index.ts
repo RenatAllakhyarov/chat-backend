@@ -1,8 +1,6 @@
 import http from 'http';
 import dotenv from 'dotenv';
 import express from 'express';
-import swaggerJsdoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
 import ClientConnectionService from './services/ClientConnectionService/index';
 import { DataBaseConnection } from './services/DataBaseConnectionService';
 import { corsMiddleware } from './middlewares/CORS';
