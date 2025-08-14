@@ -17,7 +17,7 @@ servers:
     description: WebSocket server
 
 channels:
-  /:
+  /Send:
     description: Primary WebSocket channel for all chat communications
     publish:
       message:
@@ -25,6 +25,8 @@ channels:
           - $ref: '#/components/messages/InitMessage'
           - $ref: '#/components/messages/TextMessage'
           - $ref: '#/components/messages/FileMessage'
+          - $ref: '#/components/messages/SearchMessage'
+  /Get:
     subscribe:
       message:
         oneOf:
@@ -33,6 +35,7 @@ channels:
           - $ref: '#/components/messages/UserDataMessage'
           - $ref: '#/components/messages/UserStatusMessage'
           - $ref: '#/components/messages/HistoryMessage'
+          - $ref: '#/components/messages/SearchResultMessage'
 
 components:
   messages:
@@ -91,6 +94,20 @@ components:
       description: Recent messages sent on connection
       payload:
         $ref: '#/components/schemas/HistoryMessage'
+    
+    SearchMessage:
+      messageId: searchMessage
+      summary: Search messages request
+      description: Request to search messages by query
+      payload:
+        $ref: "#/components/schemas/SearchMessage"
+    
+    SearchResultMessage:
+      messageId: searchResultMessage
+      summary: Search results response
+      description: Response with search results
+      payload:
+        $ref: "#/components/schemas/SearchResultMessage"
 
   schemas:
     InitMessage:
@@ -234,3 +251,31 @@ components:
         lastActive:
           type: integer
       required: [id, username, online]
+    
+    SearchMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [search]
+        query:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required: [type, query]
+      example:
+        type: search
+        query: 'hello'
+    
+    SearchResultMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [searchResult]
+        messages:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/ServerMessage'
+      required: [type, messages]
