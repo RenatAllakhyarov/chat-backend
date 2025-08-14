@@ -170,13 +170,6 @@ components:
           type: string
         sender:
           type: string
-        content:
-          oneOf:
-            - $ref: '#/components/schemas/HistoryMessage' 
-            - $ref: '#/components/schemas/ErrorMessage' 
-            - $ref: '#/components/schemas/UserDataMessage' 
-            - $ref: '#/components/schemas/UserStatusMessage' 
-          type: string
         timestamp:
           type: integer
       required: [type, id, sender, content, timestamp]
@@ -209,13 +202,13 @@ components:
         type:
           type: string
           enum: [userStatus]
-        userId:
+        id:
           type: string
         username:
           type: string
-        online:
+        isOnline:
           type: boolean
-      required: [type, userId, username, online]
+      required: [type, id, username, isOnline]
     
     HistoryMessage:
       type: object
