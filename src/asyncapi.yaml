@@ -1,0 +1,243 @@
+asyncapi: '2.6.0'
+info:
+  title: Chat WebSocket API
+  version: '1.0.0'
+  description: |
+    Real-time chat communication protocol via WebSocket.
+    
+    ## Connection Flow:
+    1. Client connects to WebSocket endpoint
+    2. Sends INIT message with username
+    3. Receives initial data (users list, history)
+    4. Exchanges real-time messages
+servers:
+  development:
+    url: ws://localhost:{$PORT}
+    protocol: ws
+    description: WebSocket server
+
+channels:
+  /:
+    description: Primary WebSocket channel for all chat communications
+    publish:
+      message:
+        oneOf:
+          - $ref: '#/components/messages/InitMessage'
+          - $ref: '#/components/messages/TextMessage'
+          - $ref: '#/components/messages/FileMessage'
+    subscribe:
+      message:
+        oneOf:
+          - $ref: '#/components/messages/ServerMessage'
+          - $ref: '#/components/messages/ErrorMessage'
+          - $ref: '#/components/messages/UserDataMessage'
+          - $ref: '#/components/messages/UserStatusMessage'
+          - $ref: '#/components/messages/HistoryMessage'
+
+components:
+  messages:
+    InitMessage:
+      messageId: initMessage
+      summary: Initial authentication message
+      description: First message sent by client to establish connection
+      payload:
+        $ref: '#/components/schemas/InitMessage'
+    
+    TextMessage:
+      messageId: textMessage
+      summary: Text chat message
+      description: Standard text message from client
+      payload:
+        $ref: '#/components/schemas/TextMessage'
+    
+    FileMessage:
+      messageId: fileMessage
+      summary: File attachment message
+      description: Message containing file data
+      payload:
+        $ref: '#/components/schemas/FileMessage'
+    
+    ServerMessage:
+      messageId: serverMessage
+      summary: Standard server message
+      description: Regular message from server to client
+      payload:
+        $ref: '#/components/schemas/ServerMessage'
+    
+    ErrorMessage:
+      messageId: errorMessage
+      summary: Error notification
+      description: Error response from server
+      payload:
+        $ref: '#/components/schemas/ErrorMessage'
+    
+    UserDataMessage:
+      messageId: userDataMessage
+      summary: User list update
+      description: Current list of all connected users
+      payload:
+        $ref: '#/components/schemas/UserDataMessage'
+    
+    UserStatusMessage:
+      messageId: userStatusMessage
+      summary: User status change
+      description: Notification about user going online/offline
+      payload:
+        $ref: '#/components/schemas/UserStatusMessage'
+    
+    HistoryMessage:
+      messageId: historyMessage
+      summary: Message history
+      description: Recent messages sent on connection
+      payload:
+        $ref: '#/components/schemas/HistoryMessage'
+
+  schemas:
+    InitMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [init]
+        username:
+          type: string
+          minLength: 3
+          maxLength: 20
+        id:
+          type: string
+          pattern: '^[a-zA-Z0-9-]+$'
+      required: [type, username, id]
+      example:
+        type: init
+        username: alice123
+        id: client-98765
+    
+    TextMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [text]
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+      required: [type, text]
+      example:
+        type: text
+        text: Hello everyone!
+    
+    FileMessage:
+        type: object
+        properties:
+          type:
+            type: string
+            enum: [file]
+          id:
+            type: string
+          sender:
+            type: string
+          timestamp:
+            type: integer
+          fileData:
+            type: string
+            format: byte
+          fileName:
+            type: string
+          mimeType:
+            type: string
+          fileSize:
+            type: integer
+            minimum: 1
+        required: [type, id, sender, timestamp, fileData, fileName, mimeType, fileSize]
+        example:
+          type: file
+          id: "msg-12345"
+          sender: "user-67890"
+          timestamp: 1620000000
+          fileData: "JVBERi0xLjYKJdDUxdgKNSAwIG9iago8PAovTGVuZ3RoID..."
+          fileName: "document.pdf"
+          mimeType: "application/pdf"
+          fileSize: 24576
+    
+    ServerMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [msg]
+        id:
+          type: string
+        sender:
+          type: string
+        content:
+          oneOf:
+            - $ref: '#/components/schemas/HistoryMessage' 
+            - $ref: '#/components/schemas/ErrorMessage' 
+            - $ref: '#/components/schemas/UserDataMessage' 
+            - $ref: '#/components/schemas/UserStatusMessage' 
+          type: string
+        timestamp:
+          type: integer
+      required: [type, id, sender, content, timestamp]
+    
+    ErrorMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [error]
+        message:
+          type: string
+      required: [type, code, message]
+    
+    UserDataMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [userData]
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+      required: [type, users]
+    
+    UserStatusMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [userStatus]
+        userId:
+          type: string
+        username:
+          type: string
+        online:
+          type: boolean
+      required: [type, userId, username, online]
+    
+    HistoryMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [history]
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServerMessage'
+      required: [type, messages]
+    
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        online:
+          type: boolean
+        lastActive:
+          type: integer
+      required: [id, username, online]

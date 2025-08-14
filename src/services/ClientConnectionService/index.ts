@@ -1,3 +1,4 @@
+import { MessageFileTypes } from '../../types/meta';
 import { WebSocketController } from '../WebSocketController';
 import { userSocketMap } from '../../storage/chatStorage';
 import type { WebSocket, WebSocketServer } from 'ws';
@@ -10,35 +11,37 @@ class ClientConnectionService {
     clientSocket.on('message', async (raw) => {
       const parsed = WebSocketController.parseClientMessage(raw, clientSocket);
 
-      if (!parsed) {
-        return;
+      if (!parsed) return;
+
+      try {
+        await WebSocketController.handleIncomingMessage(
+          clientSocket,
+          webSocketServer,
+          parsed
+        );
+      } catch (error) {
+        WebSocketController.sendingMessage(
+          clientSocket,
+          MessageFileTypes.ERROR,
+          {
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Server unexpected error',
+          }
+        );
       }
-
-      const handler = WebSocketController.messageHandlers[parsed.type];
-
-      if (!handler) {
-        WebSocketController.sendingMessage(clientSocket, 'error', {
-          message: 'Unknown message type',
-        });
-
-        return;
-      }
-
-      await handler(clientSocket, webSocketServer, parsed);
     });
 
     clientSocket.on('close', () => {
-      const username = userSocketMap.get(clientSocket);
-
-      console.log('Socket closed, username:', username);
-      console.log('Socket closed, map size:', userSocketMap.size);
-      console.log('Socket exists in map:', userSocketMap.has(clientSocket));
-
       WebSocketController.handleUserDisconnect(clientSocket, webSocketServer);
     });
 
     clientSocket.on('error', (err) => {
-      console.error('Error:', err);
+      console.error('WebSocket error:', err);
+      WebSocketController.sendingMessage(clientSocket, MessageFileTypes.ERROR, {
+        message: 'Connection error',
+      });
     });
   }
 }

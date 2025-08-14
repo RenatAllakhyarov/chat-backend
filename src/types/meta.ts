@@ -1,31 +1,36 @@
-export interface BaseMessage {
+import { WebSocket, WebSocketServer } from 'ws';
+
+export interface IBaseMessage {
   id: string;
   sender: string;
   timestamp: number;
 }
 
-export interface FileData {
-  data: string;  
-  name: string;  
-  type: string;  
-  size: number;  
+export enum MessageFileTypes {
+  TEXT = 'text',
+  FILE = 'file',
+  INIT = 'init',
+  MESSAGE = 'msg',
+  HISTORY = 'history',
+  ERROR = 'error',
+  USER_DATA = 'userData',
+  USER_STATUS_CHANGED = 'userStatusChanged',
 }
 
-export interface TextMessage extends BaseMessage {
-  type: 'text';
+export interface IFileData {
+  data: string;
+  name: string;
+  type: string;
+  size: number;
+}
+
+export interface ITextMessage extends IBaseMessage {
+  type: MessageFileTypes.TEXT;
   text: string;
 }
 
-export interface AudioMessage extends BaseMessage {
-  type: 'audio';
-  fileData: string;
-  fileName: string;
-  mimeType: string;
-  fileSize: number;
-}
-
-export interface FileMessage extends BaseMessage {
-  type: 'file';
+export interface IFileMessage extends IBaseMessage {
+  type: MessageFileTypes.FILE;
   fileData: string;
   fileName: string;
   mimeType: string;
@@ -38,31 +43,44 @@ export interface IUser {
   isOnline: boolean;
 }
 
-export type WebSocketMessage = TextMessage | FileMessage | AudioMessage;
+export type TInitMessage = {
+  type: MessageFileTypes.INIT;
+  username: string;
+  id: string;
+};
 
-export type ServerMessages =
-  | { type: 'history'; messages: WebSocketMessage[] }
-  | { type: 'error'; message: string }
+export type TTextMessageClient = {
+  type: MessageFileTypes.TEXT;
+  text: string;
+};
+
+export type TFileMessageClient = {
+  type: MessageFileTypes.FILE;
+  file: IFileData;
+};
+
+export type TWebSocketMessage = ITextMessage | IFileMessage;
+
+export type TServerMessages =
+  | { type: MessageFileTypes.HISTORY; messages: TWebSocketMessage[] }
+  | { type: MessageFileTypes.ERROR; message: string }
+  | { type: MessageFileTypes.MESSAGE; message: TWebSocketMessage }
+  | { type: MessageFileTypes.USER_DATA; users: IUser[] }
   | {
-      type: 'msg';
-      message: WebSocketMessage;
-    }
-  | {
-      type: 'usersData';
-      users: IUser[];
-    }
-  | {
-      type: 'userStatusChanged';
-      username: string;
+      type: MessageFileTypes.USER_STATUS_CHANGED;
       id: string;
       isOnline: boolean;
     };
 
-export type ClientMessage =
-  | { type: 'init'; username: string; id: string }
-  | { type: 'textMessage'; text: string }
-  | { type: 'audioMessage'; file: FileData }
-  | {
-      type: 'fileMessage';
-      file: FileData;
-    };
+export type TClientMessage =
+  | TInitMessage
+  | TTextMessageClient
+  | TFileMessageClient;
+
+export type TMessageHandler = {
+  [K in TClientMessage['type']]: (
+    clientSocket: WebSocket,
+    webSocketServer: WebSocketServer,
+    parsed: Extract<TClientMessage, { type: K }>
+  ) => Promise<void>;
+};
