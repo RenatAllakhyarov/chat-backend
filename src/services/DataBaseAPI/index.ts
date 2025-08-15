@@ -1,27 +1,54 @@
-import { IFileData, MessageFileTypes } from '../../types/meta';
+import {
+    IFileData,
+    MessageFileTypes,
+    IHistoryChunkMessage,
+} from '../../types/meta';
 import { IMessage, Message } from '../../models/Message';
 import { IUser } from '../../types/meta';
 import { User } from '../../models/User';
+import { MessageParser } from '../MessageParser';
 
 export class DataBaseAPI {
     public static async getRecentMessages(
-        limit: number = 50
+        limit: number = 50,
+        lastLoadedMessageId?: string
     ): Promise<IMessage[]> {
-        const dbMessages = await Message.find()
-            .sort({ timestamp: -1 })
-            .limit(limit);
-        const websocketMessages = dbMessages.map((dbMessage) => ({
-            id: dbMessage._id.toString(),
-            type: dbMessage.type,
-            sender: dbMessage.sender,
-            timestamp: dbMessage.timestamp,
-            text: dbMessage.text,
-            fileData: dbMessage.fileData,
-            fileName: dbMessage.fileName,
-            mimeType: dbMessage.mimeType,
-            fileSize: dbMessage.fileSize,
-        }));
-        return websocketMessages;
+        try {
+            if (!lastLoadedMessageId) {
+                const dbMessages = await Message.find()
+                    .sort({ timestamp: -1 })
+                    .limit(limit)
+                    .exec();
+
+                const websocketMessages = dbMessages.map((dbMessage) =>
+                    MessageParser.transformDbMessageToWebSocket(dbMessage)
+                );
+
+                return websocketMessages;
+            }
+
+            const lastMessage = await Message.findById(lastLoadedMessageId);
+
+            if (!lastMessage) {
+                return [];
+            }
+
+            const dbMessages = await Message.find({
+                timestamp: { $lt: lastMessage.timestamp },
+            })
+                .sort({ timestamp: -1 })
+                .limit(limit)
+                .exec();
+
+            const websocketMessages = dbMessages.map((dbMessage) =>
+                MessageParser.transformDbMessageToWebSocket(dbMessage)
+            );
+
+            return websocketMessages;
+        } catch (error) {
+            console.error('Failed to get recent messages', error);
+            throw error;
+        }
     }
 
     public static async checkingUserExistence(username: string) {
