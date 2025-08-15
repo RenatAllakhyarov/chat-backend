@@ -443,41 +443,9 @@ export class WebSocketController {
         }
     }
 
-    public static transformDbMessageToWebSocket(
-        dbMessage: IMessage
-    ): TWebSocketMessage {
-        switch (dbMessage.type) {
-            case 'text':
-                return {
-                    id: dbMessage._id?.toString() || 'unkown',
-                    type: MessageFileTypes.TEXT,
-                    sender: dbMessage.sender,
-                    text: dbMessage.text!,
-                    timestamp: dbMessage.timestamp,
-                };
-
-            case 'file':
-                return {
-                    id: dbMessage._id?.toString() || 'uknown',
-                    type: MessageFileTypes.FILE,
-                    sender: dbMessage.sender,
-                    fileData: dbMessage.fileData!,
-                    fileName: dbMessage.fileName!,
-                    mimeType: dbMessage.mimeType!,
-                    fileSize: dbMessage.fileSize!,
-                    timestamp: dbMessage.timestamp,
-                };
-
-            default:
-                throw new Error(
-                    `Unknown message type: ${(dbMessage as any).type}`
-                );
-        }
-    }
-
     public static async searchMessage(
         clientSocket: WebSocket,
-        webSocketServer: WebSocketServer,
+        websocketServer: WebSocketServer,
         parsed: ISearchMessage
     ): Promise<void> {
         try {

@@ -83,7 +83,8 @@ export type TServerMessages =
           type: MessageFileTypes.USER_STATUS_CHANGED;
           id: string;
           isOnline: boolean;
-      };
+      }
+    | { type: MessageFileTypes.SEARCH_RESULT; messages: TWebSocketMessage[] };
 
 export type TClientMessage =
     | TInitMessage

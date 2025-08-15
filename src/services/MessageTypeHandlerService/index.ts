@@ -7,6 +7,7 @@ import {
     MessageFileTypes,
     TWebSocketMessage,
 } from '../../types/meta';
+import { MessageParser } from '../MessageParser';
 
 export class MessageHandlerService {
     public static async handleTextMessage(
@@ -75,7 +76,7 @@ export class MessageHandlerService {
             const dbMessage = await DataBaseAPI.searchMessages(query, 50);
 
             const websocketMessages = dbMessage.map((dbMessage) =>
-                WebSocketController.transformDbMessageToWebSocket(dbMessage)
+                MessageParser.transformDbMessageToWebSocket(dbMessage)
             );
 
             const result: ISearchResultMessage = {
