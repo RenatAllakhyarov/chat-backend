@@ -2,7 +2,7 @@
 import { MessageHandlerService } from '../MessageTypeHandlerService';
 import { userSocketMap } from '../../storage/chatStorage';
 import { RawData, WebSocket, WebSocketServer } from 'ws';
-import { MESSAGE_PACK_SIZE } from '../../constants';
+import { MESSAGE_PACK_SIZE } from '../../utils/constants';
 import { DataBaseAPI } from '../DataBaseAPI/index';
 import { dataBaseConnection } from '../../index';
 import { User } from '../../models/User';
