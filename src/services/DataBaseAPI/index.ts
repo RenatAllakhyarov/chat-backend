@@ -1,22 +1,20 @@
-import {
-    IFileData,
-    MessageFileTypes,
-    IHistoryChunkMessage,
-} from '../../types/meta';
 import { IMessage, Message } from '../../models/Message';
 import { IUser } from '../../types/meta';
 import { User } from '../../models/User';
 import { MessageParser } from '../MessageParser';
+import {
+    IFileData,
+    MessageFileTypes,
+} from '../../types/meta';
 
 export class DataBaseAPI {
     public static async getRecentMessages(
-        limit: number = 50,
+        limit: number,
         lastLoadedMessageId?: string
     ): Promise<IMessage[]> {
         try {
             if (!lastLoadedMessageId) {
                 const dbMessages = await Message.find()
-                    .sort({ timestamp: -1 })
                     .limit(limit)
                     .exec();
 
@@ -34,9 +32,8 @@ export class DataBaseAPI {
             }
 
             const dbMessages = await Message.find({
-                timestamp: { $lt: lastMessage.timestamp },
+                _id: { $lt: lastMessage._id },
             })
-                .sort({ timestamp: -1 })
                 .limit(limit)
                 .exec();
 

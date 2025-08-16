@@ -26,7 +26,7 @@ channels:
           - $ref: '#/components/messages/TextMessage'
           - $ref: '#/components/messages/FileMessage'
           - $ref: '#/components/messages/SearchMessage'
-          - $ref: '#/components/message/HistoryRequestMessage'
+          - $ref: '#/components/messages/HistoryRequestMessage'
   /Get:
     subscribe:
       message:
@@ -38,7 +38,7 @@ channels:
           - $ref: '#/components/messages/HistoryMessage'
           - $ref: '#/components/messages/HistoryChunkMessage'
           - $ref: '#/components/messages/SearchResultMessage'
-          
+
 components:
   messages:
     InitMessage:
@@ -110,7 +110,7 @@ components:
       description: Response with search results
       payload:
         $ref: "#/components/schemas/SearchResultMessage"
-
+    
     HistoryChunkMessage:
       messageId: HistoryChunkMessage
       summary: Chunk of message history for pagination
@@ -121,14 +121,13 @@ components:
         $ref: "#/components/schemas/HistoryChunkMessage"
 
     HistoryRequestMessage:
-      messageId: HistoryRequestMessage
-      summary: Request for message history
-      description: |
-       Request for message history with optional pagination.
-       If lastLoadedMessageId provides - loads next chunk.
-       If not provided - loads first chunk.
-      payload:
-      $ref: "#/components/schemas/HistoryRequestMessage"
+        summary: Request for message history
+        description: |
+         Request for message history with optional     pagination.
+          If lastLoadedMessageId provides - loads next chunk.
+          If not provided - loads first chunk.
+        payload:
+          $ref: "#/components/schemas/HistoryRequestMessage"
 
   schemas:
     InitMessage:
@@ -300,7 +299,7 @@ components:
             oneOf:
               - $ref: '#/components/schemas/ServerMessage'
       required: [type, messages]
-
+    
     HistoryChunkMessage:
       type: object
       properties:
@@ -311,7 +310,7 @@ components:
           type: array
           items:
             oneOf:
-              -$ref: '#/components/schemas/ServerMessage'
+              - $ref: '#/components/schemas/ServerMessage'
         lastLoadedMessageId:
           type: string
           description: 'ID of the last loaded message for pagination'
@@ -321,8 +320,9 @@ components:
     HistoryRequestMessage:
       type: object
       properties:
-        type: string
-        enum: [history]
+        type:
+          type: string
+          enum: [history]
       lastLoadedMessageId:
         type: string
         description: 'ID of the last loaded message for pagination'

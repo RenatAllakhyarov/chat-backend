@@ -1,3 +1,11 @@
+
+import { MessageHandlerService } from '../MessageTypeHandlerService';
+import { userSocketMap } from '../../storage/chatStorage';
+import { RawData, WebSocket, WebSocketServer } from 'ws';
+import { MESSAGE_PACK_SIZE } from '../../constants';
+import { DataBaseAPI } from '../DataBaseAPI/index';
+import { dataBaseConnection } from '../../index';
+import { User } from '../../models/User';
 import {
     TClientMessage,
     TServerMessages,
@@ -6,17 +14,9 @@ import {
     TFileMessageClient,
     TTextMessageClient,
     TMessageHandler,
-    IHistoryChunkMessage,
     ISearchMessage,
     THistoryMessageCLient,
 } from '../../types/meta';
-import { MessageHandlerService } from '../MessageTypeHandlerService';
-import { userSocketMap } from '../../storage/chatStorage';
-import { RawData, WebSocket, WebSocketServer } from 'ws';
-import { DataBaseAPI } from '../DataBaseAPI/index';
-import { dataBaseConnection } from '../../index';
-import { IMessage } from '../../models/Message';
-import { User } from '../../models/User';
 
 export class WebSocketController {
     public static async sendingMessage(
@@ -435,7 +435,7 @@ export class WebSocketController {
     ) {
         try {
             const historyMessages = await DataBaseAPI.getRecentMessages(
-                50,
+                MESSAGE_PACK_SIZE,
                 lastLoadedMessageId
             );
 
