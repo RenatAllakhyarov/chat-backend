@@ -26,6 +26,7 @@ channels:
           - $ref: '#/components/messages/TextMessage'
           - $ref: '#/components/messages/FileMessage'
           - $ref: '#/components/messages/SearchMessage'
+          - $ref: '#/components/messages/HistoryRequestMessage'
   /Get:
     subscribe:
       message:
@@ -35,6 +36,7 @@ channels:
           - $ref: '#/components/messages/UserDataMessage'
           - $ref: '#/components/messages/UserStatusMessage'
           - $ref: '#/components/messages/HistoryMessage'
+          - $ref: '#/components/messages/HistoryChunkMessage'
           - $ref: '#/components/messages/SearchResultMessage'
 
 components:
@@ -108,6 +110,24 @@ components:
       description: Response with search results
       payload:
         $ref: "#/components/schemas/SearchResultMessage"
+    
+    HistoryChunkMessage:
+      messageId: HistoryChunkMessage
+      summary: Chunk of message history for pagination
+      description: |
+       Sent when client request more messages.
+       Supports infinite scroll and efficient loading.
+      payload:
+        $ref: "#/components/schemas/HistoryChunkMessage"
+
+    HistoryRequestMessage:
+        summary: Request for message history
+        description: |
+         Request for message history with optional     pagination.
+          If lastLoadedMessageId provides - loads next chunk.
+          If not provided - loads first chunk.
+        payload:
+          $ref: "#/components/schemas/HistoryRequestMessage"
 
   schemas:
     InitMessage:
@@ -279,3 +299,35 @@ components:
             oneOf:
               - $ref: '#/components/schemas/ServerMessage'
       required: [type, messages]
+    
+    HistoryChunkMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [historyChunk]
+        messages:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/ServerMessage'
+        lastLoadedMessageId:
+          type: string
+          description: 'ID of the last loaded message for pagination'
+          nullable: true
+      required: [type, messages]
+    
+    HistoryRequestMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [history]
+      lastLoadedMessageId:
+        type: string
+        description: 'ID of the last loaded message for pagination'
+        nullable: true
+      required: [type]
+      example:
+        type: history
+        lastLoadedMessageId: "60f12badsk123"

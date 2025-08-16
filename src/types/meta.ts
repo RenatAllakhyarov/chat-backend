@@ -17,6 +17,7 @@ export enum MessageFileTypes {
     USER_STATUS_CHANGED = 'userStatusChanged',
     SEARCH = 'search',
     SEARCH_RESULT = 'searchResult',
+    HISTORY_CHUNK = 'historyChunk',
 }
 
 export interface ISearchMessage {
@@ -56,6 +57,12 @@ export interface IUser {
     isOnline: boolean;
 }
 
+export interface IHistoryChunkMessage {
+    type: MessageFileTypes.HISTORY_CHUNK;
+    messages: TWebSocketMessage[];
+    lastLoadedMessageId?: string;
+}
+
 export type TInitMessage = {
     type: MessageFileTypes.INIT;
     username: string;
@@ -72,10 +79,20 @@ export type TFileMessageClient = {
     file: IFileData;
 };
 
+export type THistoryMessageCLient = {
+    type: MessageFileTypes.HISTORY;
+    lastLoadedMessageId?: string;
+};
+
 export type TWebSocketMessage = ITextMessage | IFileMessage;
 
 export type TServerMessages =
     | { type: MessageFileTypes.HISTORY; messages: TWebSocketMessage[] }
+    | {
+          type: MessageFileTypes.HISTORY_CHUNK;
+          messages: TWebSocketMessage[];
+          lastLoadedMessageId?: string;
+      }
     | { type: MessageFileTypes.ERROR; message: string }
     | { type: MessageFileTypes.MESSAGE; message: TWebSocketMessage }
     | { type: MessageFileTypes.USER_DATA; users: IUser[] }
@@ -90,7 +107,8 @@ export type TClientMessage =
     | TInitMessage
     | TTextMessageClient
     | TFileMessageClient
-    | ISearchMessage;
+    | ISearchMessage
+    | THistoryMessageCLient;
 
 export type TMessageHandler = {
     [K in TClientMessage['type']]: (

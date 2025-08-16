@@ -1,3 +1,11 @@
+
+import { MessageHandlerService } from '../MessageTypeHandlerService';
+import { userSocketMap } from '../../storage/chatStorage';
+import { RawData, WebSocket, WebSocketServer } from 'ws';
+import { MESSAGE_PACK_SIZE } from '../../utils/constants';
+import { DataBaseAPI } from '../DataBaseAPI/index';
+import { dataBaseConnection } from '../../index';
+import { User } from '../../models/User';
 import {
     TClientMessage,
     TServerMessages,
@@ -6,16 +14,9 @@ import {
     TFileMessageClient,
     TTextMessageClient,
     TMessageHandler,
-    TWebSocketMessage,
     ISearchMessage,
+    THistoryMessageCLient,
 } from '../../types/meta';
-import { MessageHandlerService } from '../MessageTypeHandlerService';
-import { userSocketMap } from '../../storage/chatStorage';
-import { RawData, WebSocket, WebSocketServer } from 'ws';
-import { DataBaseAPI } from '../DataBaseAPI/index';
-import { dataBaseConnection } from '../../index';
-import { IMessage } from '../../models/Message';
-import { User } from '../../models/User';
 
 export class WebSocketController {
     public static async sendingMessage(
@@ -375,6 +376,14 @@ export class WebSocketController {
                     );
                     break;
 
+                case MessageFileTypes.HISTORY:
+                    await WebSocketController.handleHistoryRequest(
+                        clientSocket,
+                        webSocketServer,
+                        parsed
+                    );
+                    break;
+
                 default:
                     const unexpectedType: never = parsed;
                     throw new Error(
@@ -420,14 +429,25 @@ export class WebSocketController {
         }
     }
 
-    private static async sendHistory(clientSocket: WebSocket) {
+    private static async sendHistory(
+        clientSocket: WebSocket,
+        lastLoadedMessageId?: string
+    ) {
         try {
-            const historyMessages = await DataBaseAPI.getRecentMessages();
+            const historyMessages = await DataBaseAPI.getRecentMessages(
+                MESSAGE_PACK_SIZE,
+                lastLoadedMessageId
+            );
 
             WebSocketController.sendingMessage(
                 clientSocket,
-                MessageFileTypes.HISTORY,
-                { messages: historyMessages }
+                MessageFileTypes.HISTORY_CHUNK,
+                {
+                    type: MessageFileTypes.HISTORY_CHUNK,
+                    messages: historyMessages,
+                    lastLoadedMessageId:
+                        historyMessages[historyMessages.length - 1]?.id,
+                }
             );
         } catch (error) {
             console.error('Error in sendingHistory', error);
@@ -484,10 +504,34 @@ export class WebSocketController {
         }
     }
 
+    public static async handleHistoryRequest(
+        clientSocket: WebSocket,
+        webSocketServer: WebSocketServer,
+        parsed: THistoryMessageCLient
+    ): Promise<void> {
+        try {
+            await WebSocketController.sendHistory(
+                clientSocket,
+                parsed.lastLoadedMessageId
+            );
+        } catch (error) {
+            console.error('Failed to handle history request:', error);
+
+            WebSocketController.sendingMessage(
+                clientSocket,
+                MessageFileTypes.ERROR,
+                {
+                    message: 'Failed to load history messages',
+                }
+            );
+        }
+    }
+
     public static messageHandlers: TMessageHandler = {
         [MessageFileTypes.INIT]: this.handleInit,
         [MessageFileTypes.TEXT]: this.handleTextMessage,
         [MessageFileTypes.FILE]: this.handleFileMessage,
         [MessageFileTypes.SEARCH]: this.searchMessage,
+        [MessageFileTypes.HISTORY]: this.handleHistoryRequest,
     };
 }
