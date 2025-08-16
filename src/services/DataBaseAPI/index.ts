@@ -1,11 +1,9 @@
+import mongoose from 'mongoose';
 import { IMessage, Message } from '../../models/Message';
 import { IUser } from '../../types/meta';
 import { User } from '../../models/User';
 import { MessageParser } from '../MessageParser';
-import {
-    IFileData,
-    MessageFileTypes,
-} from '../../types/meta';
+import { IFileData, MessageFileTypes } from '../../types/meta';
 
 export class DataBaseAPI {
     public static async getRecentMessages(
@@ -13,31 +11,22 @@ export class DataBaseAPI {
         lastLoadedMessageId?: string
     ): Promise<IMessage[]> {
         try {
-            if (!lastLoadedMessageId) {
-                const dbMessages = await Message.find()
-                    .limit(limit)
-                    .exec();
+            const query = lastLoadedMessageId
+                ? {
+                      _id: {
+                          $lt: new mongoose.Types.ObjectId(lastLoadedMessageId),
+                      },
+                  }
+                : {};
 
-                const websocketMessages = dbMessages.map((dbMessage) =>
-                    MessageParser.transformDbMessageToWebSocket(dbMessage)
-                );
-
-                return websocketMessages;
-            }
-
-            const lastMessage = await Message.findById(lastLoadedMessageId);
-
-            if (!lastMessage) {
-                return [];
-            }
-
-            const dbMessages = await Message.find({
-                _id: { $lt: lastMessage._id },
-            })
+            const dbMessages = await Message.find(query)
+                .sort({ timestamp: -1 })
                 .limit(limit)
                 .exec();
 
-            const websocketMessages = dbMessages.map((dbMessage) =>
+            const sortedForClient = dbMessages.reverse();
+
+            const websocketMessages = sortedForClient.map((dbMessage) =>
                 MessageParser.transformDbMessageToWebSocket(dbMessage)
             );
 
@@ -148,7 +137,6 @@ export class DataBaseAPI {
     public static async getAllUsersData(): Promise<IUser[]> {
         try {
             const users = await User.find();
-
             return users.map((user) => ({
                 id: user._id.toString(),
                 username: user.username,
