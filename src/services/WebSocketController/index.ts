@@ -1,4 +1,3 @@
-
 import { MessageHandlerService } from '../MessageTypeHandlerService';
 import { userSocketMap } from '../../storage/chatStorage';
 import { RawData, WebSocket, WebSocketServer } from 'ws';
@@ -62,6 +61,14 @@ export class WebSocketController {
                 typeof parsed.query === 'string'
             ) {
                 return parsed as ISearchMessage;
+            }
+
+            if (
+                parsed.type === MessageFileTypes.HISTORY &&
+                (typeof parsed.lastLoadedMessageId === 'string' ||
+                    typeof parsed.lastLoadedMessageId === 'undefined')
+            ) {
+                return parsed as THistoryMessageCLient;
             }
 
             WebSocketController.sendingMessage(
@@ -233,7 +240,7 @@ export class WebSocketController {
 
             await this.broadcastAllUsers(webSocketServer);
         } catch (error) {
-            console.error(`Failed to set user offline`, error);
+            console.error('Failed to set user offline', error);
 
             WebSocketController.sendingMessage(
                 clientSocket,
@@ -254,7 +261,6 @@ export class WebSocketController {
                 type: MessageFileTypes.USER_DATA,
                 users: allUsersWithStatus,
             };
-
             WebSocketController.sendMessageToAllClients(
                 websocketServer,
                 MessageFileTypes.USER_DATA,
@@ -262,7 +268,7 @@ export class WebSocketController {
             );
         } catch (error) {
             console.error(
-                `Failed to send list of all users with status`,
+                'Failed to send list of all users with status',
                 error
             );
 
@@ -289,7 +295,7 @@ export class WebSocketController {
                 message
             );
         } catch (error) {
-            console.error(`Failed to send full user status`, error);
+            console.error('Failed to send full user status', error);
 
             WebSocketController.sendingMessage(
                 clientSocket,
@@ -327,7 +333,7 @@ export class WebSocketController {
                 message
             );
         } catch (error) {
-            console.error(`Failed to Change user status ${username}`, error);
+            console.error('Failed to Change user status ${username}', error);
 
             WebSocketController.sendMessageToAllClients(
                 webSocketServer,
@@ -383,7 +389,6 @@ export class WebSocketController {
                         parsed
                     );
                     break;
-
                 default:
                     const unexpectedType: never = parsed;
                     throw new Error(
@@ -503,7 +508,6 @@ export class WebSocketController {
             );
         }
     }
-
     public static async handleHistoryRequest(
         clientSocket: WebSocket,
         webSocketServer: WebSocketServer,
